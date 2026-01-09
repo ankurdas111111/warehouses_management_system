@@ -1,0 +1,40 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Warehouse Management</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <%= csrf_meta_tags %>
+    <style>
+      body { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; margin: 24px; color: #111; }
+      a { color: #0b5; text-decoration: none; }
+      a:hover { text-decoration: underline; }
+      header { display: flex; gap: 16px; align-items: center; margin-bottom: 20px; }
+      header .spacer { flex: 1; }
+      .card { border: 1px solid #e5e5e5; border-radius: 10px; padding: 16px; max-width: 980px; }
+      .muted { color: #666; }
+      .error { background: #fff1f1; border: 1px solid #ffcccc; padding: 10px; border-radius: 8px; color: #900; }
+      table { border-collapse: collapse; width: 100%; }
+      th, td { border-bottom: 1px solid #eee; padding: 10px; text-align: left; }
+      th { background: #fafafa; }
+      input, select { padding: 8px; border: 1px solid #ddd; border-radius: 8px; }
+      button { padding: 10px 12px; border-radius: 10px; border: 1px solid #ddd; background: #111; color: #fff; cursor: pointer; }
+      button.secondary { background: #fff; color: #111; }
+      .row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+      .row > * { margin: 4px 0; }
+      code { background: #f6f6f6; padding: 2px 6px; border-radius: 6px; }
+    </style>
+  </head>
+  <body>
+    <header>
+      <strong>Warehouse Management</strong>
+      <a href="<%= root_path %>">Place Order</a>
+      <a href="<%= ui_orders_path %>">My Orders</a>
+      <div class="spacer"></div>
+      <a href="<%= admin_root_path %>">Admin</a>
+    </header>
+
+    <%= yield %>
+  </body>
+</html>
+
+

@@ -1,0 +1,63 @@
+<div class="card">
+  <h2>Order <code>#<%= @order.id %></code></h2>
+  <p>Status: <strong><%= @order.status %></strong></p>
+  <p class="muted">Customer: <%= @order.customer_email %></p>
+
+  <h3>Lines</h3>
+  <table>
+    <thead>
+      <tr>
+        <th>SKU</th>
+        <th>Qty</th>
+        <th>Fulfilled</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @order.order_lines.each do |l| %>
+        <tr>
+          <td><%= l.sku.code %></td>
+          <td><%= l.quantity %></td>
+          <td><%= l.fulfilled_quantity %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+
+  <h3>Reservations</h3>
+  <table>
+    <thead>
+      <tr>
+        <th>Reservation</th>
+        <th>SKU</th>
+        <th>Warehouse</th>
+        <th>Qty</th>
+        <th>Fulfilled</th>
+        <th>Status</th>
+        <th>Expires</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @order.inventory_reservations.each do |r| %>
+        <tr>
+          <td><code><%= r.id %></code></td>
+          <td><%= r.sku.code %></td>
+          <td><%= r.warehouse.code %></td>
+          <td><%= r.quantity %></td>
+          <td><%= r.fulfilled_quantity %></td>
+          <td><%= r.status %></td>
+          <td><%= r.expires_at %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+
+  <p class="muted">
+    You can also fetch this order as JSON via <code>GET /orders/<%= @order.id %></code>.
+  </p>
+
+  <div class="row">
+    <a href="<%= root_path %>">Place another order</a>
+  </div>
+</div>
+
+

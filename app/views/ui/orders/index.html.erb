@@ -1,0 +1,46 @@
+<div class="card">
+  <h2>My Orders</h2>
+  <p class="muted">
+    Shows orders created in this browser session. You can also search by email.
+  </p>
+
+  <form method="get" action="<%= ui_orders_path %>" class="row">
+    <label>
+      Customer email<br>
+      <input name="customer_email" type="email" value="<%= @customer_email.to_s %>" placeholder="buyer@example.com">
+    </label>
+    <button type="submit">Search</button>
+    <a class="muted" href="<%= ui_orders_path %>">Clear</a>
+  </form>
+
+  <% if @orders.empty? %>
+    <p class="muted">No orders found.</p>
+  <% else %>
+    <table>
+      <thead>
+        <tr>
+          <th>Order</th>
+          <th>Status</th>
+          <th>Customer</th>
+          <th>Created</th>
+          <th>Items</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @orders.each do |o| %>
+          <tr>
+            <td><a href="<%= ui_order_path(o) %>">#<%= o.id %></a></td>
+            <td><%= o.status %></td>
+            <td><%= o.customer_email %></td>
+            <td><%= o.created_at %></td>
+            <td class="muted">
+              <%= o.order_lines.map { |l| "#{l.sku.code}×#{l.quantity}" }.join(", ") %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  <% end %>
+</div>
+
+

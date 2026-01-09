@@ -1,0 +1,32 @@
+#!/bin/bash -e
+
+
+# Controls:
+# - RUN_DB_PREPARE=0  -> disable db:prepare on boot
+# - RUN_DB_SEED=1     -> run db:seed on boot (after db:prepare)
+
+cmd="$*"
+
+should_prepare_db() {
+  [[ "${RUN_DB_PREPARE:-1}" != "0" ]] || return 1
+
+  # Detect common web server commands.
+  [[ "$cmd" == *"puma"* ]] && return 0
+  [[ "$cmd" == *"rails server"* ]] && return 0
+  [[ "$cmd" == *"./bin/rails server"* ]] && return 0
+  [[ "$cmd" == *"./bin/thrust"* ]] && return 0
+
+  return 1
+}
+
+if should_prepare_db; then
+  echo "Running db:prepare..."
+  ./bin/rails db:prepare
+
+  if [[ "${RUN_DB_SEED:-0}" == "1" ]]; then
+    echo "Running db:seed..."
+    ./bin/rails db:seed
+  fi
+fi
+
+exec "${@}"

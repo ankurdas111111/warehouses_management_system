@@ -1,0 +1,23 @@
+<div class="card">
+  <h2>Warehouses</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Code</th>
+        <th>Name</th>
+        <th>Location</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @warehouses.each do |w| %>
+        <tr>
+          <td><%= w.code %></td>
+          <td><%= w.name %></td>
+          <td class="muted"><%= w.location %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+</div>
+
+

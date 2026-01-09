@@ -1,0 +1,21 @@
+<div class="card">
+  <h2>SKUs</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Code</th>
+        <th>Name</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @skus.each do |s| %>
+        <tr>
+          <td><%= s.code %></td>
+          <td><%= s.name %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+</div>
+
+

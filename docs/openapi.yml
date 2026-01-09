@@ -1,0 +1,392 @@
+openapi: 3.0.3
+info:
+  title: Warehouse Order API
+  version: "1.0.0"
+  description: >
+    Rails API for multi-warehouse inventory reservation, cancellation, and partial fulfillment.
+servers:
+  - url: http://localhost:3000
+
+paths:
+  /skus:
+    get:
+      summary: List SKUs
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Sku"
+    post:
+      summary: Create SKU
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateSkuRequest"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Sku"
+
+  /warehouses:
+    get:
+      summary: List warehouses
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Warehouse"
+    post:
+      summary: Create warehouse
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateWarehouseRequest"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Warehouse"
+
+  /inventory:
+    get:
+      summary: List inventory stock items
+      parameters:
+        - name: sku_code
+          in: query
+          required: false
+          schema: { type: string }
+        - name: warehouse_code
+          in: query
+          required: false
+          schema: { type: string }
+        - name: location
+          in: query
+          required: false
+          description: Warehouse location filter (matches warehouses.location).
+          schema: { type: string }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/InventoryStockItem"
+
+  /inventory/adjust:
+    post:
+      summary: Adjust on-hand inventory for a SKU in a warehouse
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdjustInventoryRequest"
+      responses:
+        "200":
+          description: Updated stock item
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StockItem"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /orders:
+    post:
+      summary: Create order and reserve inventory (idempotent)
+      parameters:
+        - name: Idempotency-Key
+          in: header
+          required: true
+          description: Unique key to make order creation retry-safe.
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateOrderRequest"
+      responses:
+        "201":
+          description: Created (new order)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Order"
+        "200":
+          description: OK (idempotent replay returns existing order)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Order"
+        "409":
+          description: Conflict (out of stock or invalid transition)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+
+  /orders/{id}:
+    get:
+      summary: Get order details
+      parameters:
+        - $ref: "#/components/parameters/OrderId"
+      responses:
+        "200":
+          description: Order
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Order"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /orders/{id}/cancel:
+    post:
+      summary: Cancel an order and release remaining reservations
+      parameters:
+        - $ref: "#/components/parameters/OrderId"
+      responses:
+        "200":
+          description: Order
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Order"
+        "409":
+          description: Conflict (invalid transition)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /orders/{id}/fulfill:
+    post:
+      summary: Fulfill an order (partial fulfillment supported)
+      parameters:
+        - $ref: "#/components/parameters/OrderId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FulfillOrderRequest"
+      responses:
+        "200":
+          description: Order
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Order"
+        "409":
+          description: Conflict (invalid transition)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+components:
+  parameters:
+    OrderId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: integer
+
+  responses:
+    NotFound:
+      description: Not found
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    UnprocessableEntity:
+      description: Unprocessable entity
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+
+  schemas:
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+      required: [error]
+
+    Sku:
+      type: object
+      properties:
+        id: { type: integer }
+        code: { type: string }
+        name: { type: string }
+      required: [id, code, name]
+
+    Warehouse:
+      type: object
+      properties:
+        id: { type: integer }
+        code: { type: string }
+        name: { type: string }
+        location: { type: string }
+      required: [id, code, name, location]
+
+    StockItem:
+      type: object
+      properties:
+        id: { type: integer }
+        sku_code: { type: string }
+        warehouse_code: { type: string }
+        warehouse_location: { type: string }
+        on_hand: { type: integer }
+        reserved: { type: integer }
+      required: [id, sku_code, warehouse_code, warehouse_location, on_hand, reserved]
+
+    InventoryStockItem:
+      allOf:
+        - $ref: "#/components/schemas/StockItem"
+        - type: object
+          properties:
+            available: { type: integer }
+          required: [available]
+
+    CreateSkuRequest:
+      type: object
+      properties:
+        code: { type: string }
+        name: { type: string }
+      required: [code, name]
+
+    CreateWarehouseRequest:
+      type: object
+      properties:
+        code: { type: string }
+        name: { type: string }
+        location: { type: string }
+      required: [code, name, location]
+
+    AdjustInventoryRequest:
+      type: object
+      properties:
+        sku_code: { type: string }
+        warehouse_code: { type: string }
+        delta:
+          type: integer
+          description: Positive to add stock, negative to subtract.
+      required: [sku_code, warehouse_code, delta]
+
+    OrderLine:
+      type: object
+      properties:
+        id: { type: integer }
+        sku_id: { type: integer }
+        sku_code: { type: string }
+        quantity: { type: integer }
+        fulfilled_quantity: { type: integer }
+      required: [id, sku_id, sku_code, quantity, fulfilled_quantity]
+
+    Reservation:
+      type: object
+      properties:
+        id: { type: integer }
+        sku_id: { type: integer }
+        sku_code: { type: string }
+        warehouse_id: { type: integer }
+        warehouse_code: { type: string }
+        quantity: { type: integer }
+        fulfilled_quantity: { type: integer }
+        status:
+          type: string
+          enum: [active, released, fulfilled]
+        expires_at:
+          type: string
+          format: date-time
+      required: [id, sku_id, sku_code, warehouse_id, warehouse_code, quantity, fulfilled_quantity, status, expires_at]
+
+    Order:
+      type: object
+      properties:
+        id: { type: integer }
+        status:
+          type: string
+          enum: [pending, reserved, partially_fulfilled, fulfilled, cancelled]
+        customer_email: { type: string }
+        created_at:
+          type: string
+          format: date-time
+        lines:
+          type: array
+          items:
+            $ref: "#/components/schemas/OrderLine"
+        reservations:
+          type: array
+          items:
+            $ref: "#/components/schemas/Reservation"
+      required: [id, status, customer_email, created_at, lines, reservations]
+
+    CreateOrderLineRequest:
+      type: object
+      properties:
+        sku_code: { type: string }
+        quantity: { type: integer, minimum: 1 }
+      required: [sku_code, quantity]
+
+    CreateOrderRequest:
+      type: object
+      properties:
+        customer_email: { type: string }
+        lines:
+          type: array
+          items:
+            $ref: "#/components/schemas/CreateOrderLineRequest"
+      required: [customer_email, lines]
+
+    FulfillItemRequest:
+      type: object
+      properties:
+        reservation_id: { type: integer }
+        quantity: { type: integer, minimum: 1 }
+      required: [reservation_id, quantity]
+
+    FulfillOrderRequest:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/FulfillItemRequest"
+      required: [items]
+
+

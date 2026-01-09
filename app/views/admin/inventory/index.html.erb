@@ -1,0 +1,47 @@
+<div class="card">
+  <h2>Inventory</h2>
+
+  <form method="get" action="<%= admin_inventory_index_path %>" class="row">
+    <label>
+      SKU code<br>
+      <input name="sku_code" value="<%= @sku_code.to_s %>" placeholder="e.g. WIDGET">
+    </label>
+    <label>
+      Warehouse code<br>
+      <input name="warehouse_code" value="<%= @warehouse_code.to_s %>" placeholder="e.g. WH-A">
+    </label>
+    <label>
+      Location<br>
+      <input name="location" value="<%= @location.to_s %>" placeholder="e.g. BLR">
+    </label>
+    <button type="submit">Filter</button>
+    <a class="muted" href="<%= admin_inventory_index_path %>">Clear</a>
+  </form>
+
+  <table>
+    <thead>
+      <tr>
+        <th>SKU</th>
+        <th>Warehouse</th>
+        <th>Location</th>
+        <th>On hand</th>
+        <th>Reserved</th>
+        <th>Available</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @stock_items.each do |si| %>
+        <tr>
+          <td><%= si.sku.code %></td>
+          <td><%= si.warehouse.code %></td>
+          <td class="muted"><%= si.warehouse.location %></td>
+          <td><%= si.on_hand %></td>
+          <td><%= si.reserved %></td>
+          <td><%= si.available %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+</div>
+
+
