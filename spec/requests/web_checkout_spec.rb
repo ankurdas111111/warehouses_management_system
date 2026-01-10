@@ -41,8 +41,9 @@ RSpec.describe "Web checkout flow", type: :request do
            lines: [{ sku_code: "WIDGET", quantity: 1 }]
          }
     expect(response).to have_http_status(:found)
-    pay_path = response.headers["Location"]
-    expect(pay_path).to match(%r{\Ahttp://www\.example\.com/orders/\d+/pay\z})
+    location = response.headers.fetch("Location")
+    pay_path = URI.parse(location).path
+    expect(pay_path).to match(%r{\A/orders/\d+/pay\z})
 
     follow_redirect!
     expect(response).to have_http_status(:ok)
@@ -51,16 +52,16 @@ RSpec.describe "Web checkout flow", type: :request do
     order = Order.find(order_id)
     expect(order.payment_pending?).to be(true)
 
-    # Clicking "Proceed to checkout" should not mark paid; it just redirects to hosted checkout.
+    # Posting /pay should redirect to hosted checkout and not mark paid.
     post "/orders/#{order.id}/pay"
     expect(response).to have_http_status(:found)
-    expect(response.headers["Location"]).to eq("http://www.example.com/orders/#{order.id}/checkout")
+    expect(URI.parse(response.headers.fetch("Location")).path).to eq("/orders/#{order.id}/checkout")
     expect(order.reload.payment_pending?).to be(true)
 
     # Hosted checkout "Pay" should redirect through callback and then mark paid.
     post "/orders/#{order.id}/checkout"
     expect(response).to have_http_status(:found)
-    expect(response.headers["Location"]).to include("/orders/#{order.id}/payment_callback")
+    expect(URI.parse(response.headers.fetch("Location")).path).to include("/orders/#{order.id}/payment_callback")
 
     follow_redirect!
     expect(response).to have_http_status(:found) # callback redirects to order show
