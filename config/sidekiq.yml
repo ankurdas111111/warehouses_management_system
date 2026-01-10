@@ -1,0 +1,12 @@
+:concurrency: <%= ENV.fetch("SIDEKIQ_CONCURRENCY", 5) %>
+:queues:
+  - default
+
+:schedule:
+  auto_fulfill_due_orders:
+    cron: "0 */4 * * *"
+    class: "AutoFulfillDueOrdersWorker"
+    queue: default
+    description: "Every 4 hours, fulfill all orders that can be fulfilled (based on active, unexpired reservations)."
+
+

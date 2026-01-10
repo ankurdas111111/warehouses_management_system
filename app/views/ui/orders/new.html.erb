@@ -6,16 +6,11 @@
     <div class="error"><%= @error %></div>
   <% end %>
 
-  <form method="post" action="<%= ui_orders_path %>">
+  <form method="post" action="<%= orders_path %>">
     <%= hidden_field_tag :authenticity_token, form_authenticity_token %>
     <%= hidden_field_tag :idempotency_key, (@prefill && @prefill[:idempotency_key]).presence || @idempotency_key %>
 
-    <div class="row">
-      <label>
-        Email<br>
-        <input type="email" name="customer_email" required value="<%= (@prefill && @prefill[:customer_email]).to_s %>">
-      </label>
-    </div>
+    <p class="muted">Ordering as <strong><%= current_user.email %></strong></p>
 
     <h3>Items</h3>
     <table id="lines">

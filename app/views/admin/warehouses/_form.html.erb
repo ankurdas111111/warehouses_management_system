@@ -1,0 +1,33 @@
+<% action = warehouse.persisted? ? admin_warehouse_path(warehouse) : admin_warehouses_path %>
+<% method = warehouse.persisted? ? "patch" : "post" %>
+
+<form method="post" action="<%= action %>" class="row" style="align-items:flex-end;">
+  <%= hidden_field_tag :authenticity_token, form_authenticity_token %>
+  <% if method != "post" %>
+    <input type="hidden" name="_method" value="<%= method %>">
+  <% end %>
+
+  <label>
+    Code<br>
+    <input name="warehouse[code]" value="<%= warehouse.code.to_s %>" required>
+  </label>
+
+  <label>
+    Name<br>
+    <input name="warehouse[name]" value="<%= warehouse.name.to_s %>" required>
+  </label>
+
+  <label>
+    Location<br>
+    <select name="warehouse[location]" required>
+      <% warehouse_locations.each do |loc| %>
+        <option value="<%= loc %>" <%= "selected" if loc == warehouse.location %>><%= loc %></option>
+      <% end %>
+    </select>
+  </label>
+
+  <button type="submit"><%= warehouse.persisted? ? "Update" : "Create" %></button>
+  <a class="muted" href="<%= admin_warehouses_path %>">Cancel</a>
+</form>
+
+

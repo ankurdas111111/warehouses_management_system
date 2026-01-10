@@ -1,4 +1,6 @@
 class Order < ApplicationRecord
+  belongs_to :user, optional: true
+
   has_many :order_lines, dependent: :destroy
   has_many :inventory_reservations, dependent: :destroy
   has_many :fulfillments, dependent: :destroy

@@ -78,7 +78,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_01_10_000100) do
     t.string "idempotency_key", null: false
     t.integer "status", default: 0, null: false
     t.datetime "updated_at", null: false
+    t.bigint "user_id"
     t.index ["idempotency_key"], name: "index_orders_on_idempotency_key", unique: true
+    t.index ["user_id"], name: "index_orders_on_user_id"
   end
 
   create_table "skus", force: :cascade do |t|
@@ -104,6 +106,14 @@ ActiveRecord::Schema[8.1].define(version: 2026_01_10_000100) do
     t.check_constraint "reserved >= 0", name: "stock_items_reserved_non_negative"
   end
 
+  create_table "users", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "email", null: false
+    t.string "password_digest", null: false
+    t.datetime "updated_at", null: false
+    t.index ["email"], name: "index_users_on_email", unique: true
+  end
+
   create_table "warehouses", force: :cascade do |t|
     t.string "code", null: false
     t.datetime "created_at", null: false
@@ -124,6 +134,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_01_10_000100) do
   add_foreign_key "inventory_reservations", "warehouses"
   add_foreign_key "order_lines", "orders"
   add_foreign_key "order_lines", "skus"
+  add_foreign_key "orders", "users"
   add_foreign_key "stock_items", "skus"
   add_foreign_key "stock_items", "warehouses"
 end

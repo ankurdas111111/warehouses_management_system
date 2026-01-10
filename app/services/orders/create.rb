@@ -1,15 +1,19 @@
 module Orders
   class Create
     RESERVATION_TTL = 30.minutes
+    AUTO_FULFILL_DELAY_SECONDS = ENV.fetch("AUTO_FULFILL_DELAY_SECONDS", "15").to_i
 
-    def initialize(customer_email:, idempotency_key:, lines:)
+    def initialize(customer_email:, idempotency_key:, lines:, user: nil)
       @customer_email = customer_email
       @idempotency_key = idempotency_key
       @lines = lines
+      @user = user
     end
 
     def call
       validate_inputs!
+
+      order = nil
 
       ActiveSupport::Notifications.instrument(
         "orders.create",
@@ -18,38 +22,46 @@ module Orders
         line_count: @lines.size
       ) do
         Order.transaction do
-        existing = Order.find_by(idempotency_key: @idempotency_key)
-        return existing if existing
+          existing = Order.find_by(idempotency_key: @idempotency_key)
+          if existing
+            order = existing
+            next
+          end
 
-        order = Order.create!(
-          customer_email: @customer_email,
-          idempotency_key: @idempotency_key,
-          status: :pending
-        )
-
-        order_lines = build_order_lines(order)
-
-        sku_ids = order_lines.map(&:sku_id)
-        stock_items = StockItem.where(sku_id: sku_ids).order(:id).lock.to_a
-        stock_by_sku = stock_items.group_by(&:sku_id)
-
-        expires_at = Time.current + RESERVATION_TTL
-
-        order_lines.each do |line|
-          allocate_for_line!(
-            order: order,
-            line: line,
-            stock_items: stock_by_sku.fetch(line.sku_id, []),
-            expires_at: expires_at
+          order = Order.create!(
+            customer_email: @customer_email,
+            idempotency_key: @idempotency_key,
+            status: :pending,
+            user: @user
           )
-        end
 
-        order.update!(status: :reserved)
-        order
+          order_lines = build_order_lines(order)
+
+          sku_ids = order_lines.map(&:sku_id)
+          stock_items = StockItem.where(sku_id: sku_ids).order(:id).lock.to_a
+          stock_by_sku = stock_items.group_by(&:sku_id)
+
+          expires_at = Time.current + RESERVATION_TTL
+
+          order_lines.each do |line|
+            allocate_for_line!(
+              order: order,
+              line: line,
+              stock_items: stock_by_sku.fetch(line.sku_id, []),
+              expires_at: expires_at
+            )
+          end
+
+          order.update!(status: :reserved)
         end
       end
+
+      enqueue_auto_fulfill(order)
+      order
     rescue ActiveRecord::RecordNotUnique
-      Order.find_by!(idempotency_key: @idempotency_key)
+      order = Order.find_by!(idempotency_key: @idempotency_key)
+      enqueue_auto_fulfill(order)
+      order
     rescue OutOfStockError => e
       ActiveSupport::Notifications.instrument(
         "orders.create.out_of_stock",
@@ -131,6 +143,17 @@ module Orders
       end
 
       raise OutOfStockError, "insufficient inventory for sku_id=#{line.sku_id}" if needed.positive?
+    end
+
+    def enqueue_auto_fulfill(order)
+      return unless order
+      return if Rails.env.test?
+      return if ENV.fetch("AUTO_FULFILL_ENABLED", "1") == "0"
+      return if ENV.fetch("AUTO_FULFILL_ON_CREATE", "1") == "0"
+      return unless ENV["REDIS_URL"].present?
+      return unless order.reserved? || order.partially_fulfilled?
+
+      AutoFulfillOrderWorker.perform_in(AUTO_FULFILL_DELAY_SECONDS, order.id)
     end
   end
 end

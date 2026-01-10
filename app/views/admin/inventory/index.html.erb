@@ -12,10 +12,41 @@
     </label>
     <label>
       Location<br>
-      <input name="location" value="<%= @location.to_s %>" placeholder="e.g. BLR">
+      <select name="location">
+        <option value="">All</option>
+        <% warehouse_locations.each do |loc| %>
+          <option value="<%= loc %>" <%= "selected" if loc == @location %>><%= loc %></option>
+        <% end %>
+      </select>
     </label>
     <button type="submit">Filter</button>
     <a class="muted" href="<%= admin_inventory_index_path %>">Clear</a>
+  </form>
+
+  <h3>New SKU (with initial stock)</h3>
+  <form method="post" action="<%= create_sku_admin_inventory_index_path %>" class="row">
+    <%= hidden_field_tag :authenticity_token, form_authenticity_token %>
+    <label>
+      Code<br>
+      <input name="sku[code]" required placeholder="e.g. WIDGET">
+    </label>
+    <label>
+      Name<br>
+      <input name="sku[name]" required placeholder="Widget">
+    </label>
+    <label>
+      Warehouse<br>
+      <select name="sku[stocks][][warehouse_code]" required>
+        <% @warehouses.each do |w| %>
+          <option value="<%= w.code %>"><%= w.code %> — <%= w.location %></option>
+        <% end %>
+      </select>
+    </label>
+    <label>
+      On hand<br>
+      <input type="number" name="sku[stocks][][on_hand]" min="0" required value="0">
+    </label>
+    <button type="submit">Create</button>
   </form>
 
   <table>
@@ -27,6 +58,7 @@
         <th>On hand</th>
         <th>Reserved</th>
         <th>Available</th>
+        <th></th>
       </tr>
     </thead>
     <tbody>
@@ -38,6 +70,17 @@
           <td><%= si.on_hand %></td>
           <td><%= si.reserved %></td>
           <td><%= si.available %></td>
+          <td>
+            <% if si.reserved.to_i == 0 %>
+              <form method="post" action="<%= admin_inventory_path(si) %>" onsubmit="return confirm('Delete this stock item?');">
+                <%= hidden_field_tag :authenticity_token, form_authenticity_token %>
+                <input type="hidden" name="_method" value="delete">
+                <button type="submit" class="secondary">Delete</button>
+              </form>
+            <% else %>
+              <span class="muted">Locked</span>
+            <% end %>
+          </td>
         </tr>
       <% end %>
     </tbody>

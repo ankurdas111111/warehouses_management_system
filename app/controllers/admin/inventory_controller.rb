@@ -11,7 +11,59 @@ module Admin
       scope = scope.joins(:warehouse).where(warehouses: { location: @location }) if @location
 
       @stock_items = scope.to_a
+
+      @skus = Sku.order(:code)
+      @warehouses = Warehouse.order(:code)
     end
+
+    def destroy
+      stock_item = StockItem.includes(:sku, :warehouse).find(params[:id])
+      if stock_item.reserved.positive?
+        return redirect_to admin_inventory_index_path, alert: "Cannot delete: reserved > 0 for #{stock_item.sku.code} @ #{stock_item.warehouse.code}"
+      end
+
+      stock_item.destroy!
+      redirect_to admin_inventory_index_path, notice: "Deleted stock item"
+    end
+
+    def create_sku
+      p = create_sku_params
+
+      sku = nil
+      Sku.transaction do
+        sku = Sku.create!(code: p[:code], name: p[:name])
+
+        stocks = normalize_stocks(p[:stocks])
+        stocks.each do |s|
+          wh = Warehouse.find_by!(code: s[:warehouse_code])
+          StockItem.create!(sku: sku, warehouse: wh, on_hand: s[:on_hand], reserved: 0)
+        end
+      end
+
+      redirect_to admin_inventory_index_path, notice: "SKU created (#{sku.code})"
+    rescue ActiveRecord::RecordInvalid, ActiveRecord::RecordNotFound, Inventory::Error => e
+      redirect_to admin_inventory_index_path, alert: e.message
+    end
+
+    private
+
+    def create_sku_params
+      params.require(:sku).permit(:code, :name, stocks: %i[warehouse_code on_hand]).to_h.deep_symbolize_keys
+    end
+
+    def normalize_stocks(stocks)
+      rows = Array(stocks)
+      rows = rows.select { |r| r.is_a?(Hash) && r[:warehouse_code].present? }
+
+      rows.map do |r|
+        on_hand = r[:on_hand].to_i
+        raise Inventory::ValidationError, "on_hand must be >= 0" if on_hand.negative?
+
+        { warehouse_code: r[:warehouse_code].to_s, on_hand: on_hand }
+      end
+      .uniq { |r| r[:warehouse_code] }
+    end
+
   end
 end
 

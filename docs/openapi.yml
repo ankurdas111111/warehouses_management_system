@@ -8,7 +8,7 @@ servers:
   - url: http://localhost:3000
 
 paths:
-  /skus:
+  /api/skus:
     get:
       summary: List SKUs
       responses:
@@ -36,7 +36,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/Sku"
 
-  /warehouses:
+  /api/warehouses:
     get:
       summary: List warehouses
       responses:
@@ -64,7 +64,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/Warehouse"
 
-  /inventory:
+  /api/inventory:
     get:
       summary: List inventory stock items
       parameters:
@@ -91,7 +91,7 @@ paths:
                 items:
                   $ref: "#/components/schemas/InventoryStockItem"
 
-  /inventory/adjust:
+  /api/inventory/adjust:
     post:
       summary: Adjust on-hand inventory for a SKU in a warehouse
       requestBody:
@@ -112,7 +112,7 @@ paths:
         "404":
           $ref: "#/components/responses/NotFound"
 
-  /orders:
+  /api/orders:
     post:
       summary: Create order and reserve inventory (idempotent)
       parameters:
@@ -150,7 +150,7 @@ paths:
         "422":
           $ref: "#/components/responses/UnprocessableEntity"
 
-  /orders/{id}:
+  /api/orders/{id}:
     get:
       summary: Get order details
       parameters:
@@ -165,7 +165,7 @@ paths:
         "404":
           $ref: "#/components/responses/NotFound"
 
-  /orders/{id}/cancel:
+  /api/orders/{id}/cancel:
     post:
       summary: Cancel an order and release remaining reservations
       parameters:
@@ -186,7 +186,7 @@ paths:
         "404":
           $ref: "#/components/responses/NotFound"
 
-  /orders/{id}/fulfill:
+  /api/orders/{id}/fulfill:
     post:
       summary: Fulfill an order (partial fulfillment supported)
       parameters:

@@ -1,10 +1,12 @@
 <div class="card">
-  <h2>SKUs</h2>
+  <h2>SKUs (<%= @skus.size %>)</h2>
+
   <table>
     <thead>
       <tr>
         <th>Code</th>
         <th>Name</th>
+        <th></th>
       </tr>
     </thead>
     <tbody>
@@ -12,6 +14,13 @@
         <tr>
           <td><%= s.code %></td>
           <td><%= s.name %></td>
+          <td style="text-align:right;">
+            <form method="post" action="<%= admin_sku_path(s) %>" onsubmit="return confirm('Delete this SKU?');">
+              <%= hidden_field_tag :authenticity_token, form_authenticity_token %>
+              <input type="hidden" name="_method" value="delete">
+              <button type="submit" class="secondary">Delete</button>
+            </form>
+          </td>
         </tr>
       <% end %>
     </tbody>

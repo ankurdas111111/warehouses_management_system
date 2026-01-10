@@ -1,11 +1,31 @@
 <div class="card">
   <h2>Warehouses</h2>
+  <div class="row">
+    <a href="<%= new_admin_warehouse_path %>">New Warehouse</a>
+    <a class="muted" href="<%= admin_logout_path %>">Logout</a>
+  </div>
+
+  <form method="get" action="<%= admin_warehouses_path %>" class="row" style="margin-top:10px;">
+    <label>
+      Location<br>
+      <select name="location">
+        <option value="">All</option>
+        <% warehouse_locations.each do |loc| %>
+          <option value="<%= loc %>" <%= "selected" if loc == @location %>><%= loc %></option>
+        <% end %>
+      </select>
+    </label>
+    <button type="submit">Filter</button>
+    <a class="muted" href="<%= admin_warehouses_path %>">Clear</a>
+  </form>
+
   <table>
     <thead>
       <tr>
         <th>Code</th>
         <th>Name</th>
         <th>Location</th>
+        <th></th>
       </tr>
     </thead>
     <tbody>
@@ -14,6 +34,14 @@
           <td><%= w.code %></td>
           <td><%= w.name %></td>
           <td class="muted"><%= w.location %></td>
+          <td class="row" style="justify-content:flex-end;">
+            <a href="<%= edit_admin_warehouse_path(w) %>">Edit</a>
+            <form method="post" action="<%= admin_warehouse_path(w) %>" onsubmit="return confirm('Delete this warehouse?');">
+              <%= hidden_field_tag :authenticity_token, form_authenticity_token %>
+              <input type="hidden" name="_method" value="delete">
+              <button type="submit" class="secondary">Delete</button>
+            </form>
+          </td>
         </tr>
       <% end %>
     </tbody>

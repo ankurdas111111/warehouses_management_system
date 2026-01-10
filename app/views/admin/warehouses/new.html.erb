@@ -1,0 +1,12 @@
+<div class="card">
+  <h2>New Warehouse</h2>
+  <%= render "form", warehouse: @warehouse %>
+
+  <% if @warehouse.errors.any? %>
+    <div class="error" style="margin-top:12px;">
+      <%= @warehouse.errors.full_messages.join(", ") %>
+    </div>
+  <% end %>
+</div>
+
+

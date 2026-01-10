@@ -28,8 +28,19 @@
     <header>
       <strong>Warehouse Management</strong>
       <a href="<%= root_path %>">Place Order</a>
-      <a href="<%= ui_orders_path %>">My Orders</a>
+      <a href="<%= orders_path %>">My Orders</a>
       <div class="spacer"></div>
+      <% if Current.user.present? %>
+        <span class="muted"><%= Current.user.email %></span>
+        <form method="post" action="<%= logout_path %>" style="display:inline">
+          <input type="hidden" name="_method" value="delete">
+          <%= hidden_field_tag :authenticity_token, form_authenticity_token %>
+          <button class="secondary" type="submit">Logout</button>
+        </form>
+      <% else %>
+        <a href="<%= login_path %>">Login</a>
+        <a href="<%= signup_path %>">Sign up</a>
+      <% end %>
       <a href="<%= admin_root_path %>">Admin</a>
     </header>
 

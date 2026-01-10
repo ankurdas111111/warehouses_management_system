@@ -1,145 +1,189 @@
-# Warehouse Order API (Rails)
+# Warehouse Management — Multi-Warehouse Orders & Inventory (Rails)
 
-Multi-warehouse order reservation + fulfillment system designed to demonstrate **concurrency-safe inventory**:
-- Uses **Postgres row locking** (`SELECT ... FOR UPDATE` via ActiveRecord `lock`)
-- Enforces invariants with **DB constraints** (`reserved <= on_hand`, non-negative counters, etc.)
-- Supports **partial fulfillment** and **cancellation**
-- Includes an **RSpec concurrency test** proving “no oversells”
+This project implements a multi-warehouse order + inventory system focused on **correctness under concurrency**. It is designed to be a strong portfolio artifact for backend/SDE interviews: transactional guarantees, database constraints, background processing, and production-oriented operations.
 
-## Requirements
-- Ruby **3.4+** (recommended via `rbenv`)
-- Docker + `docker-compose` (used to run Postgres + Redis)
+## Highlights
+- **Concurrency-safe inventory reservations** across multiple warehouses
+- **Idempotent order creation** (safe retries)
+- **Cancellation and partial fulfillment** flows
+- **Background fulfillment** using Sidekiq + Redis (fast path + safety net sweep)
+- **Admin UI** (basic auth) for SKUs, warehouses, inventory, and Sidekiq monitoring
+- **Minimal user UI** with **JWT login/signup** and “My Orders” scoped to the logged-in user
+- **OpenAPI** documentation and **RSpec** test suite (includes a dedicated concurrency spec)
 
-## Setup
-Start Postgres + Redis (Postgres is mapped to host port **5434**; Redis to **6380**):
+## Architecture and key decisions
+### Correctness via Postgres (source of truth)
+All business-critical state lives in Postgres:
+- `orders`, `order_lines`
+- `inventory_reservations`
+- `stock_items` (per SKU per warehouse inventory)
+
+Correctness is guaranteed using:
+- **Row-level locks** (`SELECT ... FOR UPDATE` via ActiveRecord `lock`) inside transactions
+- **Database constraints** on `stock_items`:
+  - `on_hand >= 0`
+  - `reserved >= 0`
+  - `reserved <= on_hand`
+- **Unique indexes**:
+  - `stock_items`: unique `(sku_id, warehouse_id)`
+  - `orders`: unique `idempotency_key`
+
+### Background work via Sidekiq + Redis
+Redis is used only for Sidekiq’s job data (queues, schedules, retries). Business data remains in Postgres.
+
+Fulfillment uses a best-practice pattern:
+- **Fast path**: enqueue a fulfillment job shortly after an order is reserved.
+- **Safety net**: a cron sweep runs every 4 hours and fulfills eligible reserved orders that were missed/stuck.
+
+### Structured logging
+Domain events are emitted via `ActiveSupport::Notifications` and logged as JSON to support debugging and operational visibility in production.
+
+## Tech stack
+- Ruby on Rails (Rails 8.x)
+- Postgres (data + concurrency control)
+- Sidekiq + Redis (background processing)
+- RSpec (tests)
+- Docker Compose (local Postgres + Redis)
+
+## Local development
+### 1) Start Postgres + Redis
+Docker ports are mapped for local dev:
+- Postgres: host **5434** → container 5432
+- Redis: host **6380** → container 6379
 
 ```bash
 docker-compose up -d
 ```
 
-Create a local `.env` so you don't have to type `DB_PORT=...` every time:
-
+### 2) Configure env and install gems
 ```bash
 cp env.example .env
 bundle install
 ```
 
-Create + migrate DB and seed demo data:
-
+### 3) Setup database and seed demo data
 ```bash
 bin/rails db:setup
 ```
 
-Run the API server:
-
+### 4) Run the web service
 ```bash
 bin/rails s
 ```
 
-## Minimal UI
-- **User order page**: `GET /` (place order)
-- **Admin**: `GET /admin` (basic auth; configure `ADMIN_USER`/`ADMIN_PASSWORD`)
-
-Run Sidekiq (background jobs):
-
+### 5) Run Sidekiq (jobs + cron schedule)
 ```bash
-bundle exec sidekiq
+bundle exec sidekiq -C config/sidekiq.yml
 ```
 
-## Deploy (Render, Docker Web Service) — automated migrations
-The Docker image runs `bin/rails db:prepare` automatically on boot when starting Puma/rails server.
+## UI
+### User UI (JWT)
+- Sign up: `GET /signup`
+- Login: `GET /login`
+- Place order: `GET /`
+- My orders (scoped): `GET /orders`
 
-- **Default**: migrations run automatically on deploy/restart.
-- **Optional seeds**: set `RUN_DB_SEED=1` on Render to run `db:seed` automatically too.
+The UI uses a **JWT stored in an HttpOnly encrypted cookie**. After login, the UI only queries orders associated to the logged-in user.
 
-You can disable auto-migrations by setting `RUN_DB_PREPARE=0`.
+### Admin UI (basic auth)
+Admin pages are protected with HTTP Basic Auth (`ADMIN_USER` / `ADMIN_PASSWORD`):
+- Admin home: `GET /admin`
+- Inventory: `GET /admin/inventory`
+- Warehouses (CRUD): `GET /admin/warehouses`
+- SKUs: `GET /admin/skus`
+- Sidekiq monitoring: `GET /admin/sidekiq`
 
-## API
+## API documentation
 OpenAPI schema: `docs/openapi.yml`
 
-### Create SKU
-
+## API examples (curl)
+### Create a SKU
 ```bash
-curl -X POST localhost:3000/skus \
+curl -X POST localhost:3000/api/skus \
   -H 'Content-Type: application/json' \
   -d '{"code":"WIDGET","name":"Widget"}'
 ```
 
-### Create Warehouse
-
+### Create a warehouse
 ```bash
-curl -X POST localhost:3000/warehouses \
+curl -X POST localhost:3000/api/warehouses \
   -H 'Content-Type: application/json' \
   -d '{"code":"WH-A","name":"Warehouse A"}'
 ```
 
 ### Adjust inventory (per warehouse)
-
 ```bash
-curl -X POST localhost:3000/inventory/adjust \
+curl -X POST localhost:3000/api/inventory/adjust \
   -H 'Content-Type: application/json' \
   -d '{"sku_code":"WIDGET","warehouse_code":"WH-A","delta":5}'
 ```
 
-### View inventory
-List everything:
-
+### View inventory (filters)
 ```bash
-curl localhost:3000/inventory
+curl localhost:3000/api/inventory
+curl 'localhost:3000/api/inventory?sku_code=WIDGET'
+curl 'localhost:3000/api/inventory?warehouse_code=WH-A'
+curl 'localhost:3000/api/inventory?location=BLR'
 ```
 
-Filter by SKU:
-
+### Create an order (idempotent)
 ```bash
-curl 'localhost:3000/inventory?sku_code=WIDGET'
-```
-
-Filter by Warehouse:
-
-```bash
-curl 'localhost:3000/inventory?warehouse_code=WH-A'
-```
-
-Filter by Location (warehouse location):
-
-```bash
-curl 'localhost:3000/inventory?location=BLR'
-```
-
-### Create order (idempotent)
-
-```bash
-curl -X POST localhost:3000/orders \
+curl -X POST localhost:3000/api/orders \
   -H 'Content-Type: application/json' \
   -H 'Idempotency-Key: order-1' \
   -d '{"customer_email":"buyer@example.com","lines":[{"sku_code":"WIDGET","quantity":3}]}'
 ```
 
-### Cancel order
-
+### Cancel an order
 ```bash
-curl -X POST localhost:3000/orders/1/cancel
+curl -X POST localhost:3000/api/orders/1/cancel
 ```
 
-### Fulfill order (partial ok)
-Use reservation IDs returned from the `POST /orders` response:
-
+### Fulfill an order (partial ok)
+Use reservation IDs returned from `POST /orders`:
 ```bash
-curl -X POST localhost:3000/orders/1/fulfill \
+curl -X POST localhost:3000/api/orders/1/fulfill \
   -H 'Content-Type: application/json' \
   -d '{"items":[{"reservation_id":123,"quantity":1}]}'
 ```
 
-## Proving “no oversells”
-### RSpec concurrency test
+## Testing
+Run all specs (includes a concurrency-focused spec that validates inventory never oversells under concurrent order creation):
 
 ```bash
-DB_PORT=5434 bundle exec rspec
+bundle exec rspec
 ```
 
-### Simple HTTP load test (requires server running)
+## Deployment (Render, Docker)
+Recommended Render topology:
+- **Web Service**: Rails/Puma
+- **Redis**: required for Sidekiq
+- **Background Worker**: Sidekiq
 
+### Automated migrations and seeding
+The Docker entrypoint runs `bin/rails db:prepare` automatically at boot.
+- Default: migrations run automatically on deploy/restart
+- Optional seed: set `RUN_DB_SEED=1`
+- Disable auto-migrations: set `RUN_DB_PREPARE=0`
+
+### Worker start command (Render Background Worker)
 ```bash
-THREADS=50 ruby script/load_test.rb
+bundle exec sidekiq -C config/sidekiq.yml
 ```
+
+## Environment variables
+See `env.example` for local defaults.
+
+Common production variables:
+- `DATABASE_URL` (Render Postgres)
+- `REDIS_URL` (Render Redis)
+- `RAILS_MASTER_KEY` (Render)
+- `ADMIN_USER`, `ADMIN_PASSWORD` (set strong values in production)
+- `JWT_SECRET` (optional; defaults to Rails `secret_key_base`)
+
+## Interview-ready talking points
+- Prevented overselling with **database constraints + transactional row locks**, not fragile application checks.
+- Designed order creation to be **idempotent** using unique idempotency keys (safe retries).
+- Implemented resilient background processing with **Sidekiq retries** and a **periodic safety-net sweep**.
+
 
