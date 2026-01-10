@@ -94,6 +94,7 @@ GEM
     cronex (0.15.0)
       tzinfo
       unicode (>= 0.4.4.5)
+    csv (3.3.5)
     database_cleaner-active_record (2.2.2)
       activerecord (>= 5.a)
       database_cleaner-core (~> 2.0)
@@ -366,6 +367,7 @@ DEPENDENCIES
   bootsnap
   brakeman
   bundler-audit
+  csv
   database_cleaner-active_record
   debug
   dotenv-rails

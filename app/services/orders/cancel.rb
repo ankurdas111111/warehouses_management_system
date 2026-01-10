@@ -48,6 +48,19 @@ module Orders
           )
         end
 
+        # Wallet refund (idempotent): if the order was paid, credit the user's wallet on cancellation.
+        if order.paid? && order.user_id.present?
+          refund_amount = order.total_paise
+          Wallets::Transfer.credit!(
+            user: order.user,
+            amount_paise: refund_amount,
+            reason: "order_refund",
+            idempotency_key: "refund-order-#{order.id}",
+            order: order
+          )
+          order.update!(payment_status: :refunded)
+        end
+
         order.update!(status: :cancelled)
         order
         end

@@ -1,6 +1,6 @@
-module Ui
+module Web
   class AuthenticatedController < BaseController
-    include UiAuthentication
+    include WebAuthentication
   end
 end
 

@@ -13,9 +13,7 @@ module Admin
       return env if env.any?
 
       db = Warehouse.distinct.order(:location).pluck(:location).compact
-      return db if db.any?
-
-      %w[BLR MUM DEL HYD]
+      (IndianCities::CITIES + db).map(&:to_s).map(&:strip).reject(&:blank?).uniq.sort
     end
 
     def require_admin_basic_auth

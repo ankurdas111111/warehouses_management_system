@@ -91,27 +91,6 @@ paths:
                 items:
                   $ref: "#/components/schemas/InventoryStockItem"
 
-  /api/inventory/adjust:
-    post:
-      summary: Adjust on-hand inventory for a SKU in a warehouse
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/AdjustInventoryRequest"
-      responses:
-        "200":
-          description: Updated stock item
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/StockItem"
-        "422":
-          $ref: "#/components/responses/UnprocessableEntity"
-        "404":
-          $ref: "#/components/responses/NotFound"
-
   /api/orders:
     post:
       summary: Create order and reserve inventory (idempotent)
@@ -297,16 +276,6 @@ components:
         location: { type: string }
       required: [code, name, location]
 
-    AdjustInventoryRequest:
-      type: object
-      properties:
-        sku_code: { type: string }
-        warehouse_code: { type: string }
-        delta:
-          type: integer
-          description: Positive to add stock, negative to subtract.
-      required: [sku_code, warehouse_code, delta]
-
     OrderLine:
       type: object
       properties:
@@ -330,10 +299,7 @@ components:
         status:
           type: string
           enum: [active, released, fulfilled]
-        expires_at:
-          type: string
-          format: date-time
-      required: [id, sku_id, sku_code, warehouse_id, warehouse_code, quantity, fulfilled_quantity, status, expires_at]
+      required: [id, sku_id, sku_code, warehouse_id, warehouse_code, quantity, fulfilled_quantity, status]
 
     Order:
       type: object

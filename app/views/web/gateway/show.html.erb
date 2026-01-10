@@ -1,0 +1,39 @@
+<div class="card">
+  <h2>Hosted Checkout (Dummy)</h2>
+  <p class="muted">
+    Provider Order ID: <code><%= @payment.provider_order_id %></code><br>
+    Amount: <strong><%= format("₹%.2f", @payment.amount_paise.to_i / 100.0) %></strong><br>
+    Currency: INR
+  </p>
+
+  <p class="muted">
+    This simulates a third-party hosted checkout page. Enter any values below.
+  </p>
+
+  <form method="post" action="<%= gateway_pay_path(order_id: @order.id) %>">
+    <%= hidden_field_tag :authenticity_token, form_authenticity_token %>
+
+    <div class="row">
+      <label>
+        Card number<br>
+        <input name="card_number" placeholder="4111 1111 1111 1111">
+      </label>
+      <label>
+        Expiry<br>
+        <input name="expiry" placeholder="12/30">
+      </label>
+      <label>
+        CVV<br>
+        <input name="cvv" placeholder="123">
+      </label>
+    </div>
+
+    <div class="row" style="margin-top: 10px;">
+      <button type="submit">Pay</button>
+      <button class="secondary" type="submit" name="simulate_failure" value="1">Fail</button>
+      <a class="muted" href="<%= new_payment_path(order_id: @order.id) %>">Back</a>
+    </div>
+  </form>
+</div>
+
+

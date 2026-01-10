@@ -1,0 +1,36 @@
+<div class="card">
+  <h2>Wallets</h2>
+
+  <form method="get" action="<%= admin_wallets_path %>" class="row">
+    <label>
+      User email<br>
+      <input name="email" value="<%= @email.to_s %>" placeholder="user@example.com">
+    </label>
+    <button type="submit" class="secondary">Search</button>
+  </form>
+
+  <% if @user %>
+    <p class="muted" style="margin-top: 10px;">
+      User: <strong><%= @user.email %></strong>
+    </p>
+    <p class="muted">
+      Wallet balance: <strong><%= format("₹%.2f", @wallet&.balance_paise.to_i / 100.0) %></strong>
+      <span class="muted">(<%= @wallet&.balance_paise.to_i %> paise)</span>
+    </p>
+
+    <h3>Credit wallet</h3>
+    <form method="post" action="<%= admin_wallets_credit_path %>" class="row">
+      <%= hidden_field_tag :authenticity_token, form_authenticity_token %>
+      <input type="hidden" name="email" value="<%= @user.email %>">
+      <label>
+        Amount (INR)<br>
+        <input name="amount_inr" required placeholder="e.g. 250.00">
+      </label>
+      <button type="submit">Credit</button>
+    </form>
+  <% else %>
+    <p class="muted" style="margin-top: 10px;">Search by email to view/credit a user's wallet.</p>
+  <% end %>
+</div>
+
+

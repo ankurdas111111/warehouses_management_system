@@ -10,7 +10,8 @@ class OrdersController < ApplicationController
       Orders::Create.new(
         customer_email: p[:customer_email],
         idempotency_key: idempotency_key,
-        lines: p[:lines]
+        lines: p[:lines],
+        delivery_city: p[:delivery_city]
       )
 
     order = service.call
@@ -35,7 +36,7 @@ class OrdersController < ApplicationController
   private
 
   def create_params
-    params.permit(:customer_email, lines: %i[sku_code quantity]).to_h.deep_symbolize_keys
+    params.permit(:customer_email, :delivery_city, lines: %i[sku_code quantity]).to_h.deep_symbolize_keys
   end
 
   def fulfill_params
@@ -51,6 +52,8 @@ class OrdersController < ApplicationController
       id: order.id,
       status: order.status,
       customer_email: order.customer_email,
+      delivery_city: order.delivery_city,
+      payment_status: order.payment_status,
       created_at: order.created_at,
       lines: lines.map do |l|
         {
@@ -70,8 +73,7 @@ class OrdersController < ApplicationController
           warehouse_code: r.warehouse.code,
           quantity: r.quantity,
           fulfilled_quantity: r.fulfilled_quantity,
-          status: r.status,
-          expires_at: r.expires_at
+          status: r.status
         }
       end
     }

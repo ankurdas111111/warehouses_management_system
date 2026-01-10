@@ -10,18 +10,6 @@ class InventoryController < ApplicationController
     render json: scope.map { |si| serialize_stock_item(si) }
   end
 
-  def adjust
-    p = adjust_params
-    stock_item =
-      Inventory::Adjust.new(
-        sku_code: p[:sku_code],
-        warehouse_code: p[:warehouse_code],
-        delta: p[:delta]
-      ).call
-
-    render json: serialize_stock_item(stock_item)
-  end
-
   private
 
   def serialize_stock_item(stock_item)
@@ -38,10 +26,6 @@ class InventoryController < ApplicationController
 
   def index_params
     params.permit(:sku_code, :warehouse_code, :location).to_h.deep_symbolize_keys
-  end
-
-  def adjust_params
-    params.permit(:sku_code, :warehouse_code, :delta).to_h.deep_symbolize_keys
   end
 end
 

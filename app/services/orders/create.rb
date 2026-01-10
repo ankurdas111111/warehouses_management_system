@@ -1,13 +1,13 @@
 module Orders
   class Create
-    RESERVATION_TTL = 30.minutes
-    AUTO_FULFILL_DELAY_SECONDS = ENV.fetch("AUTO_FULFILL_DELAY_SECONDS", "15").to_i
+    AUTO_FULFILL_DELAY_SECONDS = ENV.fetch("AUTO_FULFILL_DELAY_SECONDS", "300").to_i
 
-    def initialize(customer_email:, idempotency_key:, lines:, user: nil)
+    def initialize(customer_email:, idempotency_key:, lines:, user: nil, delivery_city: nil)
       @customer_email = customer_email
       @idempotency_key = idempotency_key
       @lines = lines
       @user = user
+      @delivery_city = (IndianCities.canonical(delivery_city) || delivery_city).to_s.strip.presence
     end
 
     def call
@@ -32,7 +32,9 @@ module Orders
             customer_email: @customer_email,
             idempotency_key: @idempotency_key,
             status: :pending,
-            user: @user
+            user: @user,
+            delivery_city: @delivery_city,
+            payment_status: :payment_pending
           )
 
           order_lines = build_order_lines(order)
@@ -41,14 +43,26 @@ module Orders
           stock_items = StockItem.where(sku_id: sku_ids).order(:id).lock.to_a
           stock_by_sku = stock_items.group_by(&:sku_id)
 
-          expires_at = Time.current + RESERVATION_TTL
+          # Distance map used to prefer the nearest warehouse locations to the delivery city.
+          # If either city lacks coordinates, distance is nil and those warehouses will be ranked last.
+          delivery_coords = @delivery_city.present? ? IndianCities.coords(@delivery_city) : nil
+          wh_by_id = Warehouse.where(id: stock_items.map(&:warehouse_id).uniq).select(:id, :location).index_by(&:id)
+          distance_by_wh_id =
+            if delivery_coords
+              wh_by_id.transform_values do |wh|
+                IndianCities.distance_km(@delivery_city, wh.location)
+              end
+            else
+              {}
+            end
 
           order_lines.each do |line|
             allocate_for_line!(
               order: order,
               line: line,
               stock_items: stock_by_sku.fetch(line.sku_id, []),
-              expires_at: expires_at
+              delivery_city: @delivery_city,
+              distance_by_wh_id: distance_by_wh_id
             )
           end
 
@@ -56,7 +70,7 @@ module Orders
         end
       end
 
-      enqueue_auto_fulfill(order)
+      # Fulfillment should happen only after payment is marked as paid.
       order
     rescue ActiveRecord::RecordNotUnique
       order = Order.find_by!(idempotency_key: @idempotency_key)
@@ -103,13 +117,27 @@ module Orders
       end
     end
 
-    def allocate_for_line!(order:, line:, stock_items:, expires_at:)
+    def allocate_for_line!(order:, line:, stock_items:, delivery_city:, distance_by_wh_id:)
       needed = line.quantity
 
       candidates =
         stock_items
           .select { |si| si.available.positive? }
-          .sort_by { |si| [-si.available, si.warehouse_id] }
+          .sort_by do |si|
+            # Prefer nearer warehouses first. If distance is unknown, treat as far away.
+            distance = distance_by_wh_id[si.warehouse_id]
+            distance_rank = distance.nil? ? 1 : 0
+
+            # If no distance info exists at all, fall back to exact city match preference.
+            exact_city_rank =
+              if distance_by_wh_id.empty? && delivery_city.present?
+                (Warehouse.where(id: si.warehouse_id).pick(:location).to_s == delivery_city) ? 0 : 1
+              else
+                0
+              end
+
+            [distance_rank, exact_city_rank, (distance || 9_999_999), -si.available, si.warehouse_id]
+          end
 
       candidates.each do |stock_item|
         break if needed <= 0
@@ -124,8 +152,7 @@ module Orders
           warehouse_id: stock_item.warehouse_id,
           quantity: take,
           fulfilled_quantity: 0,
-          status: :active,
-          expires_at: expires_at
+          status: :active
         )
 
         stock_item.update!(reserved: stock_item.reserved + take)
@@ -136,8 +163,7 @@ module Orders
           reservation_id: reservation.id,
           sku_id: line.sku_id,
           warehouse_id: stock_item.warehouse_id,
-          quantity: take,
-          expires_at: expires_at
+          quantity: take
         )
         needed -= take
       end
@@ -145,16 +171,6 @@ module Orders
       raise OutOfStockError, "insufficient inventory for sku_id=#{line.sku_id}" if needed.positive?
     end
 
-    def enqueue_auto_fulfill(order)
-      return unless order
-      return if Rails.env.test?
-      return if ENV.fetch("AUTO_FULFILL_ENABLED", "1") == "0"
-      return if ENV.fetch("AUTO_FULFILL_ON_CREATE", "1") == "0"
-      return unless ENV["REDIS_URL"].present?
-      return unless order.reserved? || order.partially_fulfilled?
-
-      AutoFulfillOrderWorker.perform_in(AUTO_FULFILL_DELAY_SECONDS, order.id)
-    end
   end
 end
 

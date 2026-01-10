@@ -1,0 +1,46 @@
+<div class="card">
+  <h2>Wallet</h2>
+  <p class="muted">
+    Balance: <strong><%= format("₹%.2f", @wallet.balance_paise.to_i / 100.0) %></strong>
+  </p>
+
+  <h3>Recharge (Dummy Payment Gateway)</h3>
+  <form method="post" action="<%= wallet_recharge_path %>" class="row">
+    <%= hidden_field_tag :authenticity_token, form_authenticity_token %>
+    <label>
+      Amount (INR)<br>
+      <input name="amount_inr" required placeholder="e.g. 500.00">
+    </label>
+    <button type="submit">Recharge</button>
+  </form>
+
+  <h3 style="margin-top:16px;">Recent transactions</h3>
+  <% if @txns.empty? %>
+    <p class="muted">No transactions yet.</p>
+  <% else %>
+    <table>
+      <thead>
+        <tr>
+          <th>Time</th>
+          <th>Kind</th>
+          <th>Amount</th>
+          <th>Reason</th>
+          <th>Order</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @txns.each do |t| %>
+          <tr>
+            <td class="muted"><%= t.created_at %></td>
+            <td><%= t.kind %></td>
+            <td><%= format("₹%.2f", t.amount_paise.to_i / 100.0) %></td>
+            <td class="muted"><%= t.reason %></td>
+            <td><%= t.order_id ? "##{t.order_id}" : "" %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  <% end %>
+</div>
+
+

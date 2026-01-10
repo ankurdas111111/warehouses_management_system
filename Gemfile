@@ -12,6 +12,9 @@ gem "sidekiq"
 gem "sidekiq-cron"
 # Redis (Sidekiq + optional cache store)
 gem "redis", ">= 5.0"
+
+# Ruby 3.4: csv is no longer a default gem
+gem "csv"
 # Build JSON APIs with ease [https://github.com/rails/jbuilder]
 # gem "jbuilder"
 

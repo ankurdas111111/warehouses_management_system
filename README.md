@@ -111,13 +111,6 @@ curl -X POST localhost:3000/api/warehouses \
   -d '{"code":"WH-A","name":"Warehouse A"}'
 ```
 
-### Adjust inventory (per warehouse)
-```bash
-curl -X POST localhost:3000/api/inventory/adjust \
-  -H 'Content-Type: application/json' \
-  -d '{"sku_code":"WIDGET","warehouse_code":"WH-A","delta":5}'
-```
-
 ### View inventory (filters)
 ```bash
 curl localhost:3000/api/inventory
@@ -181,9 +174,6 @@ Common production variables:
 - `ADMIN_USER`, `ADMIN_PASSWORD` (set strong values in production)
 - `JWT_SECRET` (optional; defaults to Rails `secret_key_base`)
 
-## Interview-ready talking points
-- Prevented overselling with **database constraints + transactional row locks**, not fragile application checks.
-- Designed order creation to be **idempotent** using unique idempotency keys (safe retries).
-- Implemented resilient background processing with **Sidekiq retries** and a **periodic safety-net sweep**.
+
 
 

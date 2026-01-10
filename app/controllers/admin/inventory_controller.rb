@@ -31,7 +31,9 @@ module Admin
 
       sku = nil
       Sku.transaction do
-        sku = Sku.create!(code: p[:code], name: p[:name])
+        inr = p[:price_inr].to_s.strip
+        price_cents = (BigDecimal(inr) * 100).to_i
+        sku = Sku.create!(code: p[:code], name: p[:name], price_cents: price_cents)
 
         stocks = normalize_stocks(p[:stocks])
         stocks.each do |s|
@@ -48,7 +50,7 @@ module Admin
     private
 
     def create_sku_params
-      params.require(:sku).permit(:code, :name, stocks: %i[warehouse_code on_hand]).to_h.deep_symbolize_keys
+      params.require(:sku).permit(:code, :name, :price_inr, stocks: %i[warehouse_code on_hand]).to_h.deep_symbolize_keys
     end
 
     def normalize_stocks(stocks)

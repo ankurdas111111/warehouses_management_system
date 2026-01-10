@@ -8,14 +8,11 @@ class AutoFulfillDueOrdersWorker
   def perform(limit = 500)
     return if ENV.fetch("AUTO_FULFILL_ENABLED", "1") == "0"
 
-    now = Time.current
-
     eligible_order_ids =
       InventoryReservation
         .where(status: :active)
-        .where("expires_at > ?", now)
         .joins(:order)
-        .merge(Order.where(status: %i[reserved partially_fulfilled]))
+        .merge(Order.where(status: %i[reserved partially_fulfilled], payment_status: :paid))
         .distinct
         .order("orders.id ASC")
         .limit(limit.to_i)

@@ -19,11 +19,12 @@
 
   <label>
     Location<br>
-    <select name="warehouse[location]" required>
+    <input name="warehouse[location]" value="<%= warehouse.location.to_s %>" list="warehouse_locations" required placeholder="e.g. Bengaluru">
+    <datalist id="warehouse_locations">
       <% warehouse_locations.each do |loc| %>
-        <option value="<%= loc %>" <%= "selected" if loc == warehouse.location %>><%= loc %></option>
+        <option value="<%= loc %>"></option>
       <% end %>
-    </select>
+    </datalist>
   </label>
 
   <button type="submit"><%= warehouse.persisted? ? "Update" : "Create" %></button>

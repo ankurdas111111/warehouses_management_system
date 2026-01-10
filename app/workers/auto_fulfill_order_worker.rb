@@ -13,6 +13,7 @@ class AutoFulfillOrderWorker
         order = Order.lock.find(order.id)
 
         return if order.cancelled? || order.fulfilled?
+        return unless order.paid?
         return unless order.reserved? || order.partially_fulfilled?
 
         active_reservations =
@@ -21,12 +22,6 @@ class AutoFulfillOrderWorker
                .order(:id)
                .lock
                .to_a
-
-        # If any active reservation is already expired, cancel the order to release stock.
-        if active_reservations.any? { |r| r.expires_at <= Time.current }
-          Orders::Cancel.new(order_id: order.id).call
-          return
-        end
 
         items =
           active_reservations

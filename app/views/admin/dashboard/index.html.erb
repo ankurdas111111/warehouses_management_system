@@ -1,11 +1,13 @@
 <div class="card">
   <h2>Admin</h2>
-  <p class="muted">Basic-auth protected admin pages.</p>
+  <p class="muted">Welcome admin</p>
 
   <div class="row">
     <a href="<%= admin_inventory_index_path %>">Inventory</a>
     <a href="<%= admin_warehouses_path %>">Warehouses</a>
     <a href="<%= admin_skus_path %>">SKUs</a>
+    <a href="<%= admin_reports_path %>">Reports</a>
+    <a href="<%= admin_wallets_path %>">Wallets</a>
     <a href="/admin/sidekiq">Sidekiq Jobs</a>
     <a class="muted" href="<%= admin_logout_path %>">Logout</a>
   </div>

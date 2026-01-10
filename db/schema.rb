@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_01_10_000100) do
+ActiveRecord::Schema[8.1].define(version: 2026_01_10_005003) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -40,7 +40,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_01_10_000100) do
 
   create_table "inventory_reservations", force: :cascade do |t|
     t.datetime "created_at", null: false
-    t.datetime "expires_at", null: false
     t.integer "fulfilled_quantity", default: 0, null: false
     t.bigint "order_id", null: false
     t.integer "quantity", null: false
@@ -75,20 +74,44 @@ ActiveRecord::Schema[8.1].define(version: 2026_01_10_000100) do
   create_table "orders", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.string "customer_email", null: false
+    t.string "delivery_city"
     t.string "idempotency_key", null: false
+    t.integer "payment_status", default: 0, null: false
     t.integer "status", default: 0, null: false
     t.datetime "updated_at", null: false
     t.bigint "user_id"
+    t.index ["delivery_city"], name: "index_orders_on_delivery_city"
     t.index ["idempotency_key"], name: "index_orders_on_idempotency_key", unique: true
+    t.index ["payment_status"], name: "index_orders_on_payment_status"
     t.index ["user_id"], name: "index_orders_on_user_id"
+  end
+
+  create_table "payments", force: :cascade do |t|
+    t.integer "amount_paise", null: false
+    t.datetime "created_at", null: false
+    t.jsonb "metadata", default: {}, null: false
+    t.bigint "order_id"
+    t.bigint "payable_id"
+    t.string "payable_type"
+    t.string "provider", null: false
+    t.string "provider_order_id", null: false
+    t.string "provider_payment_id"
+    t.string "signature"
+    t.integer "status", default: 0, null: false
+    t.datetime "updated_at", null: false
+    t.index ["order_id"], name: "index_payments_on_order_id"
+    t.index ["payable_type", "payable_id"], name: "index_payments_on_payable"
+    t.index ["provider", "provider_order_id"], name: "index_payments_on_provider_and_provider_order_id", unique: true
   end
 
   create_table "skus", force: :cascade do |t|
     t.string "code", null: false
     t.datetime "created_at", null: false
     t.string "name", null: false
+    t.integer "price_cents", default: 0, null: false
     t.datetime "updated_at", null: false
     t.index ["code"], name: "index_skus_on_code", unique: true
+    t.index ["price_cents"], name: "index_skus_on_price_cents"
   end
 
   create_table "stock_items", force: :cascade do |t|
@@ -114,6 +137,30 @@ ActiveRecord::Schema[8.1].define(version: 2026_01_10_000100) do
     t.index ["email"], name: "index_users_on_email", unique: true
   end
 
+  create_table "wallet_transactions", force: :cascade do |t|
+    t.integer "amount_paise", null: false
+    t.datetime "created_at", null: false
+    t.string "idempotency_key"
+    t.integer "kind", default: 0, null: false
+    t.bigint "order_id"
+    t.bigint "payment_id"
+    t.string "reason", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "wallet_id", null: false
+    t.index ["idempotency_key"], name: "index_wallet_transactions_on_idempotency_key", unique: true, where: "(idempotency_key IS NOT NULL)"
+    t.index ["order_id"], name: "index_wallet_transactions_on_order_id"
+    t.index ["payment_id"], name: "index_wallet_transactions_on_payment_id"
+    t.index ["wallet_id"], name: "index_wallet_transactions_on_wallet_id"
+  end
+
+  create_table "wallets", force: :cascade do |t|
+    t.integer "balance_paise", default: 0, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.index ["user_id"], name: "index_wallets_on_user_id", unique: true
+  end
+
   create_table "warehouses", force: :cascade do |t|
     t.string "code", null: false
     t.datetime "created_at", null: false
@@ -135,6 +182,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_01_10_000100) do
   add_foreign_key "order_lines", "orders"
   add_foreign_key "order_lines", "skus"
   add_foreign_key "orders", "users"
+  add_foreign_key "payments", "orders"
   add_foreign_key "stock_items", "skus"
   add_foreign_key "stock_items", "warehouses"
+  add_foreign_key "wallet_transactions", "orders"
+  add_foreign_key "wallet_transactions", "payments"
+  add_foreign_key "wallet_transactions", "wallets"
+  add_foreign_key "wallets", "users"
 end

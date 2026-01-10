@@ -6,15 +6,38 @@
       <tr>
         <th>Code</th>
         <th>Name</th>
+        <th>Price (INR)</th>
         <th></th>
       </tr>
     </thead>
     <tbody>
       <% @skus.each do |s| %>
-        <tr>
-          <td><%= s.code %></td>
-          <td><%= s.name %></td>
-          <td style="text-align:right;">
+        <tr data-sku-row="<%= s.id %>">
+          <td>
+            <span data-view><%= s.code %></span>
+            <input data-edit name="sku[code]" value="<%= s.code %>" style="display:none; width: 180px;" required>
+          </td>
+          <td>
+            <span data-view><%= s.name %></span>
+            <input data-edit name="sku[name]" value="<%= s.name %>" style="display:none; width: 380px;" required>
+          </td>
+          <td>
+            <span data-view><%= s.respond_to?(:price_inr_display) ? s.price_inr_display : (s.price_cents.to_i / 100.0) %></span>
+            <input data-edit name="sku[price_inr]" value="<%= s.respond_to?(:price_inr) ? format('%.2f', s.price_inr) : format('%.2f', (s.price_cents.to_i / 100.0)) %>" style="display:none; width: 140px;" required>
+          </td>
+          <td class="row" style="justify-content:flex-end;">
+            <button type="button" class="secondary" data-edit-btn>Edit</button>
+
+            <form data-update-form method="post" action="<%= admin_sku_path(s) %>" style="display:none;">
+              <%= hidden_field_tag :authenticity_token, form_authenticity_token %>
+              <input type="hidden" name="_method" value="patch">
+              <input type="hidden" name="sku[code]" value="<%= s.code %>" data-hidden-code>
+              <input type="hidden" name="sku[name]" value="<%= s.name %>" data-hidden-name>
+              <input type="hidden" name="sku[price_inr]" value="<%= s.respond_to?(:price_inr) ? format('%.2f', s.price_inr) : format('%.2f', (s.price_cents.to_i / 100.0)) %>" data-hidden-price>
+              <button type="submit">Save</button>
+              <button type="button" class="secondary" data-cancel-btn>Cancel</button>
+            </form>
+
             <form method="post" action="<%= admin_sku_path(s) %>" onsubmit="return confirm('Delete this SKU?');">
               <%= hidden_field_tag :authenticity_token, form_authenticity_token %>
               <input type="hidden" name="_method" value="delete">
@@ -26,5 +49,59 @@
     </tbody>
   </table>
 </div>
+
+<script>
+  (function () {
+    function toggleRow(row, editing) {
+      const viewEls = row.querySelectorAll("[data-view]");
+      const editEls = row.querySelectorAll("input[data-edit]");
+      const editBtn = row.querySelector("[data-edit-btn]");
+      const updateForm = row.querySelector("form[data-update-form]");
+      if (!editBtn || !updateForm) return;
+
+      viewEls.forEach((el) => (el.style.display = editing ? "none" : ""));
+      editEls.forEach((el) => (el.style.display = editing ? "" : "none"));
+      editBtn.style.display = editing ? "none" : "";
+      updateForm.style.display = editing ? "inline-flex" : "none";
+    }
+
+    document.querySelectorAll("tr[data-sku-row]").forEach((row) => {
+      const editBtn = row.querySelector("[data-edit-btn]");
+      const cancelBtn = row.querySelector("[data-cancel-btn]");
+      const codeInput = row.querySelector('input[data-edit][name="sku[code]"]');
+      const nameInput = row.querySelector('input[data-edit][name="sku[name]"]');
+      const priceInput = row.querySelector('input[data-edit][name="sku[price_inr]"]');
+      const hiddenCode = row.querySelector("[data-hidden-code]");
+      const hiddenName = row.querySelector("[data-hidden-name]");
+      const hiddenPrice = row.querySelector("[data-hidden-price]");
+
+      if (editBtn) {
+        editBtn.addEventListener("click", function () {
+          toggleRow(row, true);
+        });
+      }
+
+      if (cancelBtn) {
+        cancelBtn.addEventListener("click", function () {
+          // reset inputs to original values from hidden fields
+          if (codeInput && hiddenCode) codeInput.value = hiddenCode.value;
+          if (nameInput && hiddenName) nameInput.value = hiddenName.value;
+          if (priceInput && hiddenPrice) priceInput.value = hiddenPrice.value;
+          toggleRow(row, false);
+        });
+      }
+
+      function syncHidden() {
+        if (codeInput && hiddenCode) hiddenCode.value = codeInput.value;
+        if (nameInput && hiddenName) hiddenName.value = nameInput.value;
+        if (priceInput && hiddenPrice) hiddenPrice.value = priceInput.value;
+      }
+
+      if (codeInput) codeInput.addEventListener("input", syncHidden);
+      if (nameInput) nameInput.addEventListener("input", syncHidden);
+      if (priceInput) priceInput.addEventListener("input", syncHidden);
+    });
+  })();
+</script>
 
 

@@ -1,4 +1,4 @@
-module Ui
+module Web
   class SessionsController < BaseController
     def new; end
 

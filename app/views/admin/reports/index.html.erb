@@ -1,0 +1,72 @@
+<div class="card">
+  <h2>Reports (CSV)</h2>
+  <p class="muted">Exports are CSV and open cleanly in Excel/Google Sheets.</p>
+
+  <h3>Orders report</h3>
+  <form method="get" action="<%= admin_reports_path %>" class="row">
+    <label>
+      From<br>
+      <input type="date" lang="en-IN" name="from" value="<%= @from.to_s %>">
+    </label>
+    <label>
+      To<br>
+      <input type="date" lang="en-IN" name="to" value="<%= @to.to_s %>">
+    </label>
+    <label>
+      Status<br>
+      <select name="status">
+        <option value="">Any</option>
+        <% Order.statuses.keys.each do |s| %>
+          <option value="<%= s %>" <%= "selected" if @status.to_s == s %>><%= s %></option>
+        <% end %>
+      </select>
+    </label>
+    <button type="submit" class="secondary">Apply</button>
+  </form>
+
+  <div class="row" style="margin-top: 8px;">
+    <a href="<%= admin_reports_orders_path(format: :csv, from: @from, to: @to, status: @status) %>">Download Orders CSV</a>
+  </div>
+</div>
+
+<div class="card" style="margin-top: 16px;">
+  <h3>Inventory snapshot</h3>
+  <p class="muted">Snapshot of stock items (SKU × warehouse) at export time.</p>
+
+  <form method="get" action="<%= admin_reports_path %>" class="row">
+    <label>
+      Location<br>
+      <select name="location">
+        <option value="">Any</option>
+        <% warehouse_locations.each do |loc| %>
+          <option value="<%= loc %>" <%= "selected" if @location.to_s == loc %>><%= loc %></option>
+        <% end %>
+      </select>
+    </label>
+    <label>
+      SKU code<br>
+      <select name="sku_code">
+        <option value="">Any</option>
+        <% @sku_codes.each do |code| %>
+          <option value="<%= code %>" <%= "selected" if @sku_code.to_s == code %>><%= code %></option>
+        <% end %>
+      </select>
+    </label>
+    <label>
+      Warehouse code<br>
+      <select name="warehouse_code">
+        <option value="">Any</option>
+        <% @warehouse_codes.each do |code| %>
+          <option value="<%= code %>" <%= "selected" if @warehouse_code.to_s == code %>><%= code %></option>
+        <% end %>
+      </select>
+    </label>
+    <button type="submit" class="secondary">Apply</button>
+  </form>
+
+  <div class="row" style="margin-top: 8px;">
+    <a href="<%= admin_reports_inventory_path(format: :csv, location: @location, sku_code: @sku_code, warehouse_code: @warehouse_code) %>">Download Inventory CSV</a>
+  </div>
+</div>
+
+

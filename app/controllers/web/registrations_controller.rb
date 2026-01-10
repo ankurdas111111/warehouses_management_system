@@ -1,4 +1,4 @@
-module Ui
+module Web
   class RegistrationsController < BaseController
     def new; end
 

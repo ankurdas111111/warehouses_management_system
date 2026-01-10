@@ -35,6 +35,10 @@
       <input name="sku[name]" required placeholder="Widget">
     </label>
     <label>
+      Price (INR)<br>
+      <input name="sku[price_inr]" required value="0" placeholder="e.g. 199.00">
+    </label>
+    <label>
       Warehouse<br>
       <select name="sku[stocks][][warehouse_code]" required>
         <% @warehouses.each do |w| %>

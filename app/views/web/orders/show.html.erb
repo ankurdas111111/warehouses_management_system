@@ -1,0 +1,131 @@
+<div class="card">
+  <h2>Order <code>#<%= @order.id %></code></h2>
+  <p>Status: <strong><%= @order.status %></strong></p>
+  <p class="muted">
+    Customer: <%= @order.customer_email %><br>
+    Created: <%= @order.created_at %><br>
+    Idempotency key: <code><%= @order.idempotency_key %></code>
+    <% if @order.delivery_city.present? %><br>Delivery city: <%= @order.delivery_city %><% end %>
+    <br>Payment: <strong><%= @order.payment_status %></strong>
+  </p>
+
+  <% total_qty = @order.order_lines.sum(&:quantity) %>
+  <% total_fulfilled = @order.order_lines.sum(&:fulfilled_quantity) %>
+  <% total_reserved = @order.inventory_reservations.sum(&:quantity) %>
+  <% total_reserved_fulfilled = @order.inventory_reservations.sum(&:fulfilled_quantity) %>
+
+  <div class="row muted">
+    <span><strong>Ordered</strong>: <%= total_qty %></span>
+    <span><strong>Fulfilled</strong>: <%= total_fulfilled %></span>
+    <span><strong>Reserved</strong>: <%= total_reserved %></span>
+    <span><strong>Reserved fulfilled</strong>: <%= total_reserved_fulfilled %></span>
+  </div>
+
+  <div class="row" style="margin-top: 10px;">
+    <% if @order.cancelled? %>
+      <span class="muted">This order is cancelled.</span>
+    <% elsif @order.fulfilled? %>
+      <span class="muted">This order is fulfilled.</span>
+    <% else %>
+      <% if @order.payment_pending? %>
+        <a href="<%= new_payment_path(order_id: @order.id) %>">Pay now</a>
+      <% end %>
+      <form method="post" action="<%= cancel_order_path(@order) %>" style="display:inline">
+        <%= hidden_field_tag :authenticity_token, form_authenticity_token %>
+        <button class="secondary" type="submit" onclick="return confirm('Cancel this order?');">Cancel order</button>
+      </form>
+    <% end %>
+  </div>
+
+  <h3>Lines</h3>
+  <table>
+    <thead>
+      <tr>
+        <th>SKU</th>
+        <th>Qty</th>
+        <th>Fulfilled</th>
+        <th>Remaining</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @order.order_lines.each do |l| %>
+        <tr>
+          <td><%= l.sku.code %></td>
+          <td><%= l.quantity %></td>
+          <td><%= l.fulfilled_quantity %></td>
+          <td><%= l.quantity - l.fulfilled_quantity %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+
+  <h3>Reservations</h3>
+  <table>
+    <thead>
+      <tr>
+        <th>Reservation</th>
+        <th>SKU</th>
+        <th>Warehouse</th>
+        <th>Location</th>
+        <th>Qty</th>
+        <th>Fulfilled</th>
+        <th>Remaining</th>
+        <th>Status</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @order.inventory_reservations.each do |r| %>
+        <tr>
+          <td><code><%= r.id %></code></td>
+          <td><%= r.sku.code %></td>
+          <td><%= r.warehouse.code %></td>
+          <td><%= r.warehouse.location %></td>
+          <td><%= r.quantity %></td>
+          <td><%= r.fulfilled_quantity %></td>
+          <td><%= r.remaining_quantity %></td>
+          <td><%= r.status %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+
+  <h3>Fulfillments</h3>
+  <% if @order.fulfillments.empty? %>
+    <p class="muted">No fulfillments created yet.</p>
+  <% else %>
+    <% @order.fulfillments.order(:id).each do |f| %>
+      <div class="card" style="margin-top: 12px;">
+        <p class="muted">
+          Fulfillment <code>#<%= f.id %></code>
+          — Warehouse: <%= f.warehouse.code %> (<%= f.warehouse.location %>)
+          — Status: <strong><%= f.status %></strong>
+        </p>
+
+        <table>
+          <thead>
+            <tr>
+              <th>SKU</th>
+              <th>Qty</th>
+              <th>Reservation</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% f.fulfillment_items.order(:id).each do |fi| %>
+              <tr>
+                <td><%= fi.sku.code %></td>
+                <td><%= fi.quantity %></td>
+                <td><code><%= fi.inventory_reservation_id %></code></td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    <% end %>
+  <% end %>
+
+  <div class="row">
+    <a href="<%= root_path %>">Place another order</a>
+  </div>
+</div>
+
+

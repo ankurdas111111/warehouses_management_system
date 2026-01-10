@@ -1,4 +1,4 @@
-module Ui
+module Web
   class HomeController < BaseController
     def index
       if Current.user.present?

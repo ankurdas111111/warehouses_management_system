@@ -1,12 +1,12 @@
-module UiAuthentication
+module WebAuthentication
   extend ActiveSupport::Concern
 
   included do
     helper_method :current_user
-    before_action :authenticate_ui_user!
+    before_action :authenticate_web_user!
   end
 
-  def authenticate_ui_user!
+  def authenticate_web_user!
     token = cookies.encrypted[:jwt]
     if token.blank?
       Current.user = nil
