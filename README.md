@@ -9,6 +9,8 @@ This project implements a multi-warehouse order + inventory system focused on **
 - **Background fulfillment** using Sidekiq + Redis (fast path + safety net sweep)
 - **Admin UI** (basic auth) for SKUs, warehouses, inventory, and Sidekiq monitoring
 - **Minimal user UI** with **JWT login/signup** and “My Orders” scoped to the logged-in user
+- **Wallet**: user top-up + pay using wallet + automatic wallet refund on cancellation
+- **Dummy hosted payment gateway**: 2-step checkout simulation (provider order → hosted checkout → callback)
 - **OpenAPI** documentation and **RSpec** test suite (includes a dedicated concurrency spec)
 
 ## Architecture and key decisions
@@ -82,6 +84,7 @@ bundle exec sidekiq -C config/sidekiq.yml
 - Login: `GET /login`
 - Place order: `GET /`
 - My orders (scoped): `GET /orders`
+- Wallet: `GET /wallet`
 
 The UI uses a **JWT stored in an HttpOnly encrypted cookie**. After login, the UI only queries orders associated to the logged-in user.
 
@@ -92,6 +95,15 @@ Admin pages are protected with HTTP Basic Auth (`ADMIN_USER` / `ADMIN_PASSWORD`)
 - Warehouses (CRUD): `GET /admin/warehouses`
 - SKUs: `GET /admin/skus`
 - Sidekiq monitoring: `GET /admin/sidekiq`
+- Wallet credit (by user email): `GET /admin/wallets`
+
+## Payments (dummy hosted checkout)
+This project includes a **dummy hosted payment gateway** flow (no real network calls):
+- `GET /orders/:id/pay`: payment selection page (creates a provider order + a `payments` row in `created` state)
+- `GET /orders/:id/checkout`: hosted checkout page (simulates a third-party UI)
+- `GET /orders/:id/payment_callback`: simulated callback that verifies a signature and marks the payment as captured
+
+Wallet payments remain a separate option on the payment page.
 
 ## API documentation
 OpenAPI schema: `docs/openapi.yml`
@@ -146,6 +158,17 @@ Run all specs (includes a concurrency-focused spec that validates inventory neve
 ```bash
 bundle exec rspec
 ```
+
+## CI (GitHub Actions)
+CI runs on every PR and push to `main`:
+- **RSpec** using Postgres service
+- **Brakeman** for static security checks
+- **Bundler Audit** for gem CVEs
+- **RuboCop** for style
+
+Test DB connection details in CI:
+- Postgres is available at `localhost:5432`
+- CI sets `DATABASE_URL=postgres://postgres:postgres@localhost:5432/warehouse_order_api_test`
 
 ## Deployment (Render, Docker)
 Recommended Render topology:
