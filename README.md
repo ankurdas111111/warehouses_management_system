@@ -197,6 +197,24 @@ Common production variables:
 - `ADMIN_USER`, `ADMIN_PASSWORD` (set strong values in production)
 - `JWT_SECRET` (optional; defaults to Rails `secret_key_base`)
 
+## Logs (Render)
+In production, Rails logs to **STDOUT**, so can view everything in the Render dashboard for Web/Worker services.
+
+This app emits **structured domain events** (single-line JSON) via `ActiveSupport::Notifications` for important flows:
+- **Orders**: `orders.create`, `orders.created`, `orders.cancel`, `orders.cancel.refund_*`, `orders.auto_fulfill`
+- **Reservations**: `reservation.created`, `reservation.released`
+- **Wallet**: `wallet.credit`, `wallet.debit`, `wallet.balance_changed`, `wallet.insufficient_balance`, `wallet.idempotent_hit`
+- **Payments / hosted checkout**: `payments.*`, `gateway.*`
+- **Reports**: `reports.orders.*`, `reports.inventory.*`
+
+Render logs: search in the logs panel for:
+- `\"event\":\"payments.captured\"` (successful payments)
+- `\"order_id\":123` (trace a specific order)
+- `\"event\":\"wallet.insufficient_balance\"` (wallet failures)
+
+Recommended env vars:
+- `RAILS_LOG_LEVEL=info` (set to `debug` temporarily only when actively debugging)
+
 
 
 

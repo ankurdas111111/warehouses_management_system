@@ -8,12 +8,14 @@ module StructuredLogging
     data[:event] = event_name
     data[:duration_ms] = duration_ms if duration_ms
     data[:timestamp] = Time.current.iso8601
+    data[:env] = Rails.env
 
     Rails.logger.info(data.to_json)
   end
 end
 
-ActiveSupport::Notifications.subscribe(/^(orders|inventory|reservation)\./) do |name, start, finish, _id, payload|
+# Subscribe to domain-level events so they show up cleanly in Render logs and are easy to forward later.
+ActiveSupport::Notifications.subscribe(/^(orders|inventory|reservation|wallet|payments|gateway|reports)\./) do |name, start, finish, _id, payload|
   duration_ms = ((finish - start) * 1000.0).round(1)
   StructuredLogging.log(event_name: name, payload: payload || {}, duration_ms: duration_ms)
 end

@@ -9,7 +9,7 @@ RSpec.describe "Orders API", type: :request do
     create(:stock_item, sku: sku, warehouse: wh1, on_hand: 2, reserved: 0)
     create(:stock_item, sku: sku, warehouse: wh2, on_hand: 2, reserved: 0)
 
-    post "/orders",
+    post "/api/orders",
          params: {
            customer_email: "buyer@example.com",
            lines: [{ sku_code: "WIDGET", quantity: 3 }]
@@ -23,7 +23,7 @@ RSpec.describe "Orders API", type: :request do
     expect(body["reservations"].sum { |r| r["quantity"] }).to eq(3)
 
     # idempotent retry returns same order
-    post "/orders",
+    post "/api/orders",
          params: {
            customer_email: "buyer@example.com",
            lines: [{ sku_code: "WIDGET", quantity: 3 }]

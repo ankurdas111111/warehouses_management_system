@@ -6,7 +6,7 @@ RSpec.describe "Inventory API", type: :request do
     wh = create(:warehouse, code: "WH-A", name: "Warehouse A", location: "BLR")
     create(:stock_item, sku: sku, warehouse: wh, on_hand: 5, reserved: 2)
 
-    get "/inventory"
+    get "/api/inventory"
 
     expect(response).to have_http_status(:ok)
     body = JSON.parse(response.body)

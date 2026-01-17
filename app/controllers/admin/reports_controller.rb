@@ -18,6 +18,12 @@ module Admin
       from = parse_time(params[:from], beginning: true)
       to = parse_time(params[:to], end_of_day: true)
       status = params[:status].presence
+      ActiveSupport::Notifications.instrument(
+        "reports.orders.request",
+        from: params[:from].presence,
+        to: params[:to].presence,
+        status: status
+      )
 
       scope = Order.all
       scope = scope.where("orders.created_at >= ?", from) if from
@@ -81,6 +87,14 @@ module Admin
         end
       end
 
+      ActiveSupport::Notifications.instrument(
+        "reports.orders.generated",
+        from: params[:from].presence,
+        to: params[:to].presence,
+        status: status,
+        row_count: orders.size,
+        filename: filename
+      )
       send_data csv, filename: filename, type: "text/csv"
     end
 
@@ -88,6 +102,12 @@ module Admin
       location = params[:location].presence
       sku_code = params[:sku_code].presence
       warehouse_code = params[:warehouse_code].presence
+      ActiveSupport::Notifications.instrument(
+        "reports.inventory.request",
+        location: location,
+        sku_code: sku_code,
+        warehouse_code: warehouse_code
+      )
 
       items =
         StockItem
@@ -134,6 +154,14 @@ module Admin
         end
       end
 
+      ActiveSupport::Notifications.instrument(
+        "reports.inventory.generated",
+        location: location,
+        sku_code: sku_code,
+        warehouse_code: warehouse_code,
+        row_count: items.size,
+        filename: filename
+      )
       send_data csv, filename: filename, type: "text/csv"
     end
 

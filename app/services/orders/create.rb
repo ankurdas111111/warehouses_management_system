@@ -17,9 +17,10 @@ module Orders
 
       ActiveSupport::Notifications.instrument(
         "orders.create",
-        customer_email: @customer_email,
         idempotency_key: @idempotency_key,
-        line_count: @lines.size
+        line_count: @lines.size,
+        user_id: @user&.id,
+        delivery_city: @delivery_city
       ) do
         Order.transaction do
           existing = Order.find_by(idempotency_key: @idempotency_key)
@@ -35,6 +36,13 @@ module Orders
             user: @user,
             delivery_city: @delivery_city,
             payment_status: :payment_pending
+          )
+          ActiveSupport::Notifications.instrument(
+            "orders.created",
+            order_id: order.id,
+            user_id: order.user_id,
+            delivery_city: order.delivery_city,
+            idempotency_key: order.idempotency_key
           )
 
           order_lines = build_order_lines(order)
@@ -145,6 +153,7 @@ module Orders
         take = [stock_item.available, needed].min
         next if take <= 0
 
+        distance_km = distance_by_wh_id[stock_item.warehouse_id]
         reservation =
           InventoryReservation.create!(
           order: order,
@@ -163,7 +172,9 @@ module Orders
           reservation_id: reservation.id,
           sku_id: line.sku_id,
           warehouse_id: stock_item.warehouse_id,
-          quantity: take
+          quantity: take,
+          delivery_city: delivery_city,
+          distance_km: distance_km
         )
         needed -= take
       end

@@ -51,6 +51,12 @@ module Orders
         # Wallet refund (idempotent): if the order was paid, credit the user's wallet on cancellation.
         if order.paid? && order.user_id.present?
           refund_amount = order.total_paise
+          ActiveSupport::Notifications.instrument(
+            "orders.cancel.refund_attempt",
+            order_id: order.id,
+            user_id: order.user_id,
+            amount_paise: refund_amount
+          )
           Wallets::Transfer.credit!(
             user: order.user,
             amount_paise: refund_amount,
@@ -59,6 +65,12 @@ module Orders
             order: order
           )
           order.update!(payment_status: :refunded)
+          ActiveSupport::Notifications.instrument(
+            "orders.cancel.refund_success",
+            order_id: order.id,
+            user_id: order.user_id,
+            amount_paise: refund_amount
+          )
         end
 
         order.update!(status: :cancelled)
