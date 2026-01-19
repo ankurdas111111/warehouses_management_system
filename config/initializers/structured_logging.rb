@@ -9,6 +9,11 @@ module StructuredLogging
     data[:duration_ms] = duration_ms if duration_ms
     data[:timestamp] = Time.current.iso8601
     data[:env] = Rails.env
+    data[:request_id] ||= Current.request_id if defined?(Current)
+    data[:user_id] ||= Current.user&.id if defined?(Current)
+    data[:admin_user] ||= Current.admin_user if defined?(Current)
+    data[:path] ||= Current.request_path if defined?(Current)
+    data[:method] ||= Current.request_method if defined?(Current)
 
     Rails.logger.info(data.to_json)
   end

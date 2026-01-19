@@ -4,6 +4,7 @@ module Admin
     layout "application"
 
     before_action :require_admin_basic_auth
+    before_action :set_current_request_context
     helper_method :warehouse_locations
 
     private
@@ -24,6 +25,17 @@ module Admin
         ActiveSupport::SecurityUtils.secure_compare(user.to_s, expected_user) &
           ActiveSupport::SecurityUtils.secure_compare(pass.to_s, expected_pass)
       end
+    end
+
+    def set_current_request_context
+      Current.request_id = request.request_id
+      Current.request_path = request.fullpath
+      Current.request_method = request.request_method
+      Current.ip = request.remote_ip
+      Current.user = nil
+
+      u, = ActionController::HttpAuthentication::Basic.user_name_and_password(request)
+      Current.admin_user = u.to_s.presence
     end
   end
 end

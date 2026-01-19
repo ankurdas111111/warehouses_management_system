@@ -17,6 +17,7 @@ require "rails/test_unit/railtie"
 # Require the gems listed in Gemfile, including any gems
 # you've limited to :test, :development, or :production.
 Bundler.require(*Rails.groups)
+require_relative "../lib/rate_limiter"
 
 module WarehouseOrderApi
   class Application < Rails::Application
@@ -46,6 +47,7 @@ module WarehouseOrderApi
     config.middleware.use ActionDispatch::Session::CookieStore, key: "_warehouse_management_session"
     config.middleware.use ActionDispatch::Flash
     config.middleware.use Rack::MethodOverride
+    config.middleware.use RateLimiter
 
     # Use Sidekiq for background jobs (instead of Rails 8 default Solid Queue)
     config.active_job.queue_adapter = :sidekiq

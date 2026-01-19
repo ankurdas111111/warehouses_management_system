@@ -1,4 +1,9 @@
 :concurrency: <%= ENV.fetch("SIDEKIQ_CONCURRENCY", 5) %>
+
+# Redis connection for Sidekiq.
+# Local default matches docker-compose.yml port mapping (host 6380 -> container 6379).
+:redis:
+  :url: <%= ENV.fetch("REDIS_URL", "redis://localhost:6380/0") %>
 :queues:
   - default
 

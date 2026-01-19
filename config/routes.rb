@@ -7,6 +7,8 @@ Rails.application.routes.draw do
   # Reveal health status on /up that returns 200 if the app boots with no exceptions, otherwise 500.
   # Can be used by load balancers and uptime monitors to verify that the app is live.
   get "up" => "rails/health#show", as: :rails_health_check
+  get "healthz" => "health#live"
+  get "readyz" => "health#ready"
 
   root "web/home#index"
 
@@ -61,6 +63,24 @@ Rails.application.routes.draw do
 
   # JSON API (moved under /api to avoid route collisions with HTML UI)
   scope "/api", as: :api, defaults: { format: :json } do
+    resources :skus, only: %i[index create]
+    resources :warehouses, only: %i[index create]
+
+    get "inventory" => "inventory#index"
+
+    resources :orders, only: %i[create show] do
+      member do
+        post :cancel
+        post :fulfill
+      end
+    end
+
+    post "payments/create_order" => "payments#create_order"
+    post "payments/verify" => "payments#verify"
+  end
+
+  # Versioned JSON API (preferred). /api remains for backwards compatibility.
+  scope "/api/v1", as: :api_v1, defaults: { format: :json } do
     resources :skus, only: %i[index create]
     resources :warehouses, only: %i[index create]
 

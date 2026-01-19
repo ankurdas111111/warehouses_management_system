@@ -19,6 +19,11 @@ module Admin
         reason: "admin_credit",
         idempotency_key: "admin-credit-#{email}-#{Time.current.to_i}"
       )
+      AuditLog.record!(
+        action: "admin.wallets.credit",
+        auditable: user.wallet,
+        metadata: { email: email, amount_paise: amount_paise }
+      )
 
       redirect_to admin_wallets_path(email: email), notice: "Wallet credited"
     rescue ActiveRecord::RecordNotFound

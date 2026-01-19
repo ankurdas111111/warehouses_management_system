@@ -10,9 +10,28 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_01_10_005003) do
+ActiveRecord::Schema[8.1].define(version: 2026_01_17_000000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
+
+  create_table "audit_logs", force: :cascade do |t|
+    t.string "action", null: false
+    t.string "actor_identifier"
+    t.string "actor_type", null: false
+    t.bigint "auditable_id"
+    t.string "auditable_type"
+    t.datetime "created_at", null: false
+    t.string "ip"
+    t.jsonb "metadata", default: {}, null: false
+    t.string "request_id"
+    t.string "request_method"
+    t.string "request_path"
+    t.datetime "updated_at", null: false
+    t.index ["action"], name: "index_audit_logs_on_action"
+    t.index ["auditable_type", "auditable_id"], name: "index_audit_logs_on_auditable_type_and_auditable_id"
+    t.index ["created_at"], name: "index_audit_logs_on_created_at"
+    t.index ["request_id"], name: "index_audit_logs_on_request_id"
+  end
 
   create_table "fulfillment_items", force: :cascade do |t|
     t.datetime "created_at", null: false

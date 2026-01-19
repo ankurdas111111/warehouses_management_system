@@ -7,6 +7,10 @@
 
   <form method="get" action="<%= admin_warehouses_path %>" class="row" style="margin-top:10px;">
     <label>
+      Search<br>
+      <input name="q" value="<%= @q.to_s %>" placeholder="code/name/location">
+    </label>
+    <label>
       Location<br>
       <select name="location">
         <option value="">All</option>
@@ -15,9 +19,14 @@
         <% end %>
       </select>
     </label>
+    <input type="hidden" name="per" value="<%= @per.to_i %>">
     <button type="submit">Filter</button>
     <a class="muted" href="<%= admin_warehouses_path %>">Clear</a>
   </form>
+
+  <p class="muted" style="margin-top:8px;">
+    Showing <strong><%= @warehouses.size %></strong> of <strong><%= @total.to_i %></strong>
+  </p>
 
   <table>
     <thead>
@@ -46,6 +55,18 @@
       <% end %>
     </tbody>
   </table>
+
+  <div class="row" style="justify-content:space-between; margin-top: 10px;">
+    <% if @page.to_i > 1 %>
+      <a class="muted" href="<%= admin_warehouses_path(q: @q, location: @location, page: (@page.to_i - 1), per: @per) %>">← Prev</a>
+    <% else %>
+      <span></span>
+    <% end %>
+
+    <% if (@page.to_i * @per.to_i) < @total.to_i %>
+      <a class="muted" href="<%= admin_warehouses_path(q: @q, location: @location, page: (@page.to_i + 1), per: @per) %>">Next →</a>
+    <% end %>
+  </div>
 </div>
 
 

@@ -24,6 +24,10 @@ module Admin
         to: params[:to].presence,
         status: status
       )
+      AuditLog.record!(
+        action: "admin.reports.orders",
+        metadata: { from: params[:from].presence, to: params[:to].presence, status: status }
+      )
 
       scope = Order.all
       scope = scope.where("orders.created_at >= ?", from) if from
@@ -107,6 +111,10 @@ module Admin
         location: location,
         sku_code: sku_code,
         warehouse_code: warehouse_code
+      )
+      AuditLog.record!(
+        action: "admin.reports.inventory",
+        metadata: { location: location, sku_code: sku_code, warehouse_code: warehouse_code }
       )
 
       items =

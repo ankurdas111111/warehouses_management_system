@@ -22,6 +22,11 @@ module Admin
         return redirect_to admin_inventory_index_path, alert: "Cannot delete: reserved > 0 for #{stock_item.sku.code} @ #{stock_item.warehouse.code}"
       end
 
+      AuditLog.record!(
+        action: "admin.inventory.destroy",
+        auditable: stock_item,
+        metadata: { sku_code: stock_item.sku.code, warehouse_code: stock_item.warehouse.code }
+      )
       stock_item.destroy!
       redirect_to admin_inventory_index_path, notice: "Deleted stock item"
     end
@@ -42,6 +47,7 @@ module Admin
         end
       end
 
+      AuditLog.record!(action: "admin.inventory.create_sku", auditable: sku, metadata: { code: sku.code })
       redirect_to admin_inventory_index_path, notice: "SKU created (#{sku.code})"
     rescue ActiveRecord::RecordInvalid, ActiveRecord::RecordNotFound, Inventory::Error => e
       redirect_to admin_inventory_index_path, alert: e.message

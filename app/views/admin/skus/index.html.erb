@@ -1,5 +1,15 @@
 <div class="card">
-  <h2>SKUs (<%= @skus.size %>)</h2>
+  <h2>SKUs (<%= @total.to_i %>)</h2>
+
+  <form method="get" action="<%= admin_skus_path %>" class="row" style="margin-top:10px;">
+    <label>
+      Search<br>
+      <input name="q" value="<%= @q.to_s %>" placeholder="code/name">
+    </label>
+    <input type="hidden" name="per" value="<%= @per.to_i %>">
+    <button type="submit" class="secondary">Search</button>
+    <a class="muted" href="<%= admin_skus_path %>">Clear</a>
+  </form>
 
   <table>
     <thead>
@@ -48,6 +58,18 @@
       <% end %>
     </tbody>
   </table>
+
+  <div class="row" style="justify-content:space-between; margin-top: 10px;">
+    <% if @page.to_i > 1 %>
+      <a class="muted" href="<%= admin_skus_path(q: @q, page: (@page.to_i - 1), per: @per) %>">← Prev</a>
+    <% else %>
+      <span></span>
+    <% end %>
+
+    <% if (@page.to_i * @per.to_i) < @total.to_i %>
+      <a class="muted" href="<%= admin_skus_path(q: @q, page: (@page.to_i + 1), per: @per) %>">Next →</a>
+    <% end %>
+  </div>
 </div>
 
 <script>

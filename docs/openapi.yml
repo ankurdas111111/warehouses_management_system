@@ -4,6 +4,7 @@ info:
   version: "1.0.0"
   description: >
     Rails API for multi-warehouse inventory reservation, cancellation, and partial fulfillment.
+    Note: the same endpoints are also available under `/api/v1/*` (preferred); `/api/*` is kept for backward compatibility.
 servers:
   - url: http://localhost:3000
 

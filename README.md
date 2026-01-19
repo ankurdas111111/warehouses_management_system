@@ -1,220 +1,229 @@
-# Warehouse Management — Multi-Warehouse Orders & Inventory (Rails)
+## Warehouse Management System (Rails) — Multi-Warehouse Inventory, Orders, Wallet & Payments
 
-This project implements a multi-warehouse order + inventory system focused on **correctness under concurrency**. It is designed to be a strong portfolio artifact for backend/SDE interviews: transactional guarantees, database constraints, background processing, and production-oriented operations.
+A production-minded Rails app that demonstrates **correctness under concurrency**, practical system design, and day-to-day engineering discipline (testing, CI, ops tooling).
 
-## Highlights
-- **Concurrency-safe inventory reservations** across multiple warehouses
-- **Idempotent order creation** (safe retries)
-- **Cancellation and partial fulfillment** flows
-- **Background fulfillment** using Sidekiq + Redis (fast path + safety net sweep)
-- **Admin UI** (basic auth) for SKUs, warehouses, inventory, and Sidekiq monitoring
-- **Minimal user UI** with **JWT login/signup** and “My Orders” scoped to the logged-in user
-- **Wallet**: user top-up + pay using wallet + automatic wallet refund on cancellation
-- **Dummy hosted payment gateway**: 2-step checkout simulation (provider order → hosted checkout → callback)
-- **OpenAPI** documentation and **RSpec** test suite (includes a dedicated concurrency spec)
 
-## Architecture and key decisions
-### Correctness via Postgres (source of truth)
-All business-critical state lives in Postgres:
-- `orders`, `order_lines`
-- `inventory_reservations`
-- `stock_items` (per SKU per warehouse inventory)
+## This project demonstrates 
+- **Concurrency-safe inventory reservations** across warehouses (no overselling)
+- **Idempotent order creation** (safe retries via Idempotency-Key)
+- **Order lifecycle**: reserve → pay → fulfill; plus cancellation + partial fulfillment
+- **Wallet**: top-up + pay with wallet + automatic refund on cancellation
+- **Hosted (dummy) payment gateway**: provider order → hosted checkout → callback + signature verification
+- **Admin tooling** (HTTP Basic Auth): manage warehouses/SKUs/inventory, export reports, credit wallets, view Sidekiq
+- **Operational readiness**: health/readiness endpoints, structured logs, audit trail, basic rate limiting
+- **Documentation + tests**: OpenAPI + RSpec (+ concurrency-focused tests)
 
-Correctness is guaranteed using:
-- **Row-level locks** (`SELECT ... FOR UPDATE` via ActiveRecord `lock`) inside transactions
-- **Database constraints** on `stock_items`:
+## Tech stack
+- **Rails 8.x**, Ruby 3.4.x
+- **Postgres** (source of truth + locking + constraints)
+- **Sidekiq + Redis** (background jobs + cron schedule)
+- **RSpec** (request specs + concurrency coverage)
+- **Docker Compose** (local Postgres + Redis)
+
+## Architecture (high level)
+Business-critical state lives in Postgres:
+- `stock_items` (SKU × warehouse inventory)
+- `inventory_reservations` (per-order reservations)
+- `orders`, `order_lines`, `fulfillments`
+- `payments`, `wallets`, `wallet_transactions`
+- `audit_logs` (admin audit trail)
+
+Correctness approach:
+- **Transactions + row locks** (`lock`) for inventory reservation and release
+- **DB constraints** on stock items:
   - `on_hand >= 0`
   - `reserved >= 0`
   - `reserved <= on_hand`
-- **Unique indexes**:
-  - `stock_items`: unique `(sku_id, warehouse_id)`
-  - `orders`: unique `idempotency_key`
+- **Uniqueness**:
+  - stock item uniqueness `(sku_id, warehouse_id)`
+  - idempotency via `orders.idempotency_key`
 
-### Background work via Sidekiq + Redis
-Redis is used only for Sidekiq’s job data (queues, schedules, retries). Business data remains in Postgres.
+### Background work: Sidekiq + Redis
+Redis is used only for Sidekiq job data (queues/retries/schedules); business data stays in Postgres.
 
-Fulfillment uses a best-practice pattern:
-- **Fast path**: enqueue a fulfillment job shortly after an order is reserved.
-- **Safety net**: a cron sweep runs every 4 hours and fulfills eligible reserved orders that were missed/stuck.
+Fulfillment pattern:
+- **Fast path**: schedule auto-fulfillment after successful payment
+- **Safety net**: cron sweep every 4 hours for eligible reserved orders
 
-### Structured logging
-Domain events are emitted via `ActiveSupport::Notifications` and logged as JSON to support debugging and operational visibility in production.
+### Currency
+SKU pricing and payments are tracked in integer **INR minor units (paise)** for correctness; UI displays INR.
 
-## Tech stack
-- Ruby on Rails (Rails 8.x)
-- Postgres (data + concurrency control)
-- Sidekiq + Redis (background processing)
-- RSpec (tests)
-- Docker Compose (local Postgres + Redis)
-
-## Local development
+## Local development (Docker for dependencies)
 ### 1) Start Postgres + Redis
-Docker ports are mapped for local dev:
+Local ports:
 - Postgres: host **5434** → container 5432
 - Redis: host **6380** → container 6379
 
 ```bash
+cd /Users/ankur.das/LearnLangs/Rails/warehouse_management
 docker-compose up -d
 ```
 
-### 2) Configure env and install gems
+### 2) Configure env + install gems
 ```bash
 cp env.example .env
 bundle install
 ```
 
-### 3) Setup database and seed demo data
+### 3) Setup database (migrate + seed)
 ```bash
 bin/rails db:setup
 ```
 
-### 4) Run the web service
+### 4) Run the web server
 ```bash
 bin/rails s
 ```
 
 ### 5) Run Sidekiq (jobs + cron schedule)
+No manual `REDIS_URL` export needed:
+
 ```bash
-bundle exec sidekiq -C config/sidekiq.yml
+chmod +x bin/sidekiq
+bin/sidekiq
 ```
 
 ## UI
-### User UI (JWT)
+### User UI (JWT cookie)
 - Sign up: `GET /signup`
 - Login: `GET /login`
 - Place order: `GET /`
-- My orders (scoped): `GET /orders`
+- My orders: `GET /orders`
 - Wallet: `GET /wallet`
 
-The UI uses a **JWT stored in an HttpOnly encrypted cookie**. After login, the UI only queries orders associated to the logged-in user.
+Auth model: JWT stored in an **encrypted, HttpOnly cookie**.
 
-### Admin UI (basic auth)
-Admin pages are protected with HTTP Basic Auth (`ADMIN_USER` / `ADMIN_PASSWORD`):
+### Admin UI (HTTP Basic Auth)
+Admin pages are protected by `ADMIN_USER` / `ADMIN_PASSWORD`:
 - Admin home: `GET /admin`
 - Inventory: `GET /admin/inventory`
 - Warehouses (CRUD): `GET /admin/warehouses`
 - SKUs: `GET /admin/skus`
-- Sidekiq monitoring: `GET /admin/sidekiq`
-- Wallet credit (by user email): `GET /admin/wallets`
+- Reports (CSV): `GET /admin/reports`
+- Wallet credit (by email): `GET /admin/wallets`
+- Sidekiq UI: `GET /admin/sidekiq`
 
-## Payments (dummy hosted checkout)
-This project includes a **dummy hosted payment gateway** flow (no real network calls):
-- `GET /orders/:id/pay`: payment selection page (creates a provider order + a `payments` row in `created` state)
-- `GET /orders/:id/checkout`: hosted checkout page (simulates a third-party UI)
-- `GET /orders/:id/payment_callback`: simulated callback that verifies a signature and marks the payment as captured
+## Payments
+### Hosted (dummy) checkout
+No external network calls; this simulates a typical gateway pattern:
+- `GET /orders/:order_id/pay` → payment selection + provider order creation
+- `GET /orders/:order_id/checkout` → hosted checkout screen
+- `GET /orders/:order_id/payment_callback` → callback verifies signature and marks payment captured
 
 Wallet payments remain a separate option on the payment page.
 
-## API documentation
+## API
+### Versioned API (preferred)
+All JSON endpoints are available under `/api/v1/*`.
+
+Legacy compatibility:
+- `/api/*` routes exist for backward compatibility (same controllers).
+
 OpenAPI schema: `docs/openapi.yml`
 
-## API examples (curl)
-### Create a SKU
-```bash
-curl -X POST localhost:3000/api/skus \
-  -H 'Content-Type: application/json' \
-  -d '{"code":"WIDGET","name":"Widget"}'
-```
+### Curl examples (v1)
+Create a warehouse:
 
-### Create a warehouse
 ```bash
-curl -X POST localhost:3000/api/warehouses \
+curl -X POST localhost:3000/api/v1/warehouses \
   -H 'Content-Type: application/json' \
   -d '{"code":"WH-A","name":"Warehouse A"}'
 ```
 
-### View inventory (filters)
+Create a SKU:
+
 ```bash
-curl localhost:3000/api/inventory
-curl 'localhost:3000/api/inventory?sku_code=WIDGET'
-curl 'localhost:3000/api/inventory?warehouse_code=WH-A'
-curl 'localhost:3000/api/inventory?location=BLR'
+curl -X POST localhost:3000/api/v1/skus \
+  -H 'Content-Type: application/json' \
+  -d '{"code":"WIDGET","name":"Widget"}'
 ```
 
-### Create an order (idempotent)
+Inventory snapshot:
+
 ```bash
-curl -X POST localhost:3000/api/orders \
+curl 'localhost:3000/api/v1/inventory?sku_code=WIDGET'
+curl 'localhost:3000/api/v1/inventory?warehouse_code=WH-A'
+curl 'localhost:3000/api/v1/inventory?location=BLR'
+```
+
+Create an order (idempotent):
+
+```bash
+curl -X POST localhost:3000/api/v1/orders \
   -H 'Content-Type: application/json' \
   -H 'Idempotency-Key: order-1' \
   -d '{"customer_email":"buyer@example.com","lines":[{"sku_code":"WIDGET","quantity":3}]}'
 ```
 
-### Cancel an order
+Cancel an order:
+
 ```bash
-curl -X POST localhost:3000/api/orders/1/cancel
+curl -X POST localhost:3000/api/v1/orders/1/cancel
 ```
 
-### Fulfill an order (partial ok)
-Use reservation IDs returned from `POST /orders`:
+Fulfill (partial supported):
+
 ```bash
-curl -X POST localhost:3000/api/orders/1/fulfill \
+curl -X POST localhost:3000/api/v1/orders/1/fulfill \
   -H 'Content-Type: application/json' \
   -d '{"items":[{"reservation_id":123,"quantity":1}]}'
 ```
 
-## Testing
-Run all specs (includes a concurrency-focused spec that validates inventory never oversells under concurrent order creation):
+## Observability & ops
+### Health endpoints
+- **Liveness**: `GET /healthz`
+- **Readiness**: `GET /readyz` (checks DB + Redis if `REDIS_URL` is set)
 
+### Structured logs (Render-friendly)
+Domain events are emitted via `ActiveSupport::Notifications` and logged as single-line JSON.
+Common searches:
+- `\"event\":\"payments.captured\"`
+- `\"event\":\"reservation.created\"`
+- `\"order_id\":123`
+
+### Admin audit trail
+High-signal admin actions are persisted in `audit_logs` (exports, wallet credits, CRUD actions).
+
+### Rate limiting
+Simple, dependency-free middleware rate-limits sensitive endpoints (login/signup/payment API).
+Disable with `RATE_LIMITING_ENABLED=0`.
+
+## Testing
 ```bash
 bundle exec rspec
 ```
 
 ## CI (GitHub Actions)
-CI runs on every PR and push to `main`:
-- **RSpec** using Postgres service
-- **Brakeman** for static security checks
-- **Bundler Audit** for gem CVEs
-- **RuboCop** for style
+CI runs on push/PR:
+- RSpec (with Postgres service)
+- RuboCop
+- Brakeman
+- Bundler Audit
 
-Test DB connection details in CI:
-- Postgres is available at `localhost:5432`
-- CI sets `DATABASE_URL=postgres://postgres:postgres@localhost:5432/warehouse_order_api_test`
-
-## Deployment (Render, Docker)
+## Deployment (Render)
 Recommended Render topology:
-- **Web Service**: Rails/Puma
-- **Redis**: required for Sidekiq
+- **Web Service**: Rails/Puma (Dockerfile)
+- **Postgres**: Render Postgres (persistent data)
+- **Redis**: Render Redis (Sidekiq)
 - **Background Worker**: Sidekiq
 
-### Automated migrations and seeding
-The Docker entrypoint runs `bin/rails db:prepare` automatically at boot.
-- Default: migrations run automatically on deploy/restart
-- Optional seed: set `RUN_DB_SEED=1`
-- Disable auto-migrations: set `RUN_DB_PREPARE=0`
+Worker start command:
 
-### Worker start command (Render Background Worker)
 ```bash
 bundle exec sidekiq -C config/sidekiq.yml
 ```
 
+### Automated migrations
+Container entrypoint runs `bin/rails db:prepare` at boot.
+Controls:
+- `RUN_DB_PREPARE=0` disables auto-migrations
+- `RUN_DB_SEED=1` runs seed after prepare
+
 ## Environment variables
-See `env.example` for local defaults.
-
-Common production variables:
-- `DATABASE_URL` (Render Postgres)
-- `REDIS_URL` (Render Redis)
-- `RAILS_MASTER_KEY` (Render)
-- `ADMIN_USER`, `ADMIN_PASSWORD` (set strong values in production)
+See `env.example` for local defaults. Common production vars:
+- `DATABASE_URL`
+- `REDIS_URL`
+- `RAILS_MASTER_KEY`
+- `ADMIN_USER`, `ADMIN_PASSWORD`
 - `JWT_SECRET` (optional; defaults to Rails `secret_key_base`)
-
-## Logs (Render)
-In production, Rails logs to **STDOUT**, so can view everything in the Render dashboard for Web/Worker services.
-
-This app emits **structured domain events** (single-line JSON) via `ActiveSupport::Notifications` for important flows:
-- **Orders**: `orders.create`, `orders.created`, `orders.cancel`, `orders.cancel.refund_*`, `orders.auto_fulfill`
-- **Reservations**: `reservation.created`, `reservation.released`
-- **Wallet**: `wallet.credit`, `wallet.debit`, `wallet.balance_changed`, `wallet.insufficient_balance`, `wallet.idempotent_hit`
-- **Payments / hosted checkout**: `payments.*`, `gateway.*`
-- **Reports**: `reports.orders.*`, `reports.inventory.*`
-
-Render logs: search in the logs panel for:
-- `\"event\":\"payments.captured\"` (successful payments)
-- `\"order_id\":123` (trace a specific order)
-- `\"event\":\"wallet.insufficient_balance\"` (wallet failures)
-
-Recommended env vars:
-- `RAILS_LOG_LEVEL=info` (set to `debug` temporarily only when actively debugging)
-
-
-
-
+- `RAILS_LOG_LEVEL=info`
