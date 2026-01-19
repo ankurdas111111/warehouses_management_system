@@ -27,4 +27,14 @@ class Order < ApplicationRecord
   def total_paise
     order_lines.includes(:sku).sum { |l| l.quantity.to_i * l.sku.price_cents.to_i }
   end
+
+  # Fulfillment timestamps (completed fulfillments). With config.time_zone set,
+  # these are displayed in IST throughout the app.
+  def first_fulfilled_at
+    fulfillments.completed.minimum(:updated_at)
+  end
+
+  def last_fulfilled_at
+    fulfillments.completed.maximum(:updated_at)
+  end
 end

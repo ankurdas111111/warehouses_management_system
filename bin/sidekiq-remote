@@ -1,0 +1,51 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Run Sidekiq locally against remote services (Render Postgres external URL + Upstash Redis).
+# Paste secrets once into .env.sidekiq-remote (gitignored), then run: bin/sidekiq-remote
+# Template: env.sidekiq-remote.example
+
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+ENV_FILE="${ENV_FILE:-${ROOT_DIR}/.env.sidekiq-remote}"
+
+if [[ -f "${ENV_FILE}" ]]; then
+  # Load env vars from a shell-compatible env file.
+  # This is intentionally not "dotenv" parsing; keep the file as KEY=VALUE lines.
+  set -a
+  # shellcheck disable=SC1090
+  source "${ENV_FILE}"
+  set +a
+else
+  echo "Missing ${ENV_FILE}"
+  echo "Create it with at least: RAILS_ENV, DATABASE_URL, REDIS_URL, RAILS_MASTER_KEY"
+  echo "Template: ${ROOT_DIR}/env.sidekiq-remote.example"
+  exit 1
+fi
+
+export RAILS_ENV="${RAILS_ENV:-production}"
+
+fail() {
+  echo "ERROR: $*" >&2
+  exit 1
+}
+
+# Basic validation to catch common copy/paste mistakes.
+[[ -n "${DATABASE_URL:-}" ]] || fail "DATABASE_URL is missing in ${ENV_FILE}"
+[[ -n "${REDIS_URL:-}" ]] || fail "REDIS_URL is missing in ${ENV_FILE}"
+[[ -n "${RAILS_MASTER_KEY:-}" ]] || fail "RAILS_MASTER_KEY is missing in ${ENV_FILE}"
+
+if [[ "${REDIS_URL}" == redis-cli* ]]; then
+  fail "REDIS_URL must be a URL (rediss://...), not a 'redis-cli ...' command. See env.sidekiq-remote.example."
+fi
+
+if [[ "${REDIS_URL}" == redis://*upstash.io* ]]; then
+  fail "Upstash requires TLS. Use rediss://... (not redis://...). See env.sidekiq-remote.example."
+fi
+
+if [[ "${DATABASE_URL}" != postgres://* && "${DATABASE_URL}" != postgresql://* ]]; then
+  fail "DATABASE_URL must start with postgres:// or postgresql://"
+fi
+
+exec "${ROOT_DIR}/bin/sidekiq"
+
+

@@ -14,6 +14,7 @@
           <th>Status</th>
           <th>Customer</th>
           <th>Created</th>
+          <th>Fulfilled</th>
           <th>Items</th>
         </tr>
       </thead>
@@ -23,7 +24,8 @@
             <td><a href="<%= order_path(o) %>">#<%= o.id %></a></td>
             <td><%= o.status %></td>
             <td><%= o.customer_email %></td>
-            <td><%= o.created_at %></td>
+            <td><%= o.created_at&.strftime("%Y-%m-%d %H:%M IST") %></td>
+            <td><%= o.last_fulfilled_at ? o.last_fulfilled_at.strftime("%Y-%m-%d %H:%M IST") : "-" %></td>
             <td class="muted">
               <%= o.order_lines.map { |l| "#{l.sku.code}×#{l.quantity}" }.join(", ") %>
             </td>

@@ -3,10 +3,13 @@
   <p>Status: <strong><%= @order.status %></strong></p>
   <p class="muted">
     Customer: <%= @order.customer_email %><br>
-    Created: <%= @order.created_at %><br>
+    Created (IST): <%= @order.created_at&.strftime("%Y-%m-%d %H:%M IST") %><br>
     Idempotency key: <code><%= @order.idempotency_key %></code>
     <% if @order.delivery_city.present? %><br>Delivery city: <%= @order.delivery_city %><% end %>
     <br>Payment: <strong><%= @order.payment_status %></strong>
+    <% if (t = @order.last_fulfilled_at).present? %>
+      <br>Last fulfilled (IST): <strong><%= t.strftime("%Y-%m-%d %H:%M IST") %></strong>
+    <% end %>
   </p>
 
   <% total_qty = @order.order_lines.sum(&:quantity) %>

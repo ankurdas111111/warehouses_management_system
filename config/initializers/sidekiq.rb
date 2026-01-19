@@ -3,6 +3,8 @@ Sidekiq.configure_server do |config|
 
   # Load periodic jobs from config/sidekiq.yml (requires sidekiq-cron gem)
   config.on(:startup) do
+    next if ENV.fetch("SIDEKIQ_CRON_ENABLED", "1") == "0"
+
     schedule_file = Rails.root.join("config/sidekiq.yml")
     next unless File.exist?(schedule_file)
 

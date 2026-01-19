@@ -37,7 +37,7 @@ module Admin
       orders =
         scope
           .order(created_at: :desc)
-          .includes(order_lines: :sku, inventory_reservations: %i[sku warehouse])
+          .includes(:fulfillments, order_lines: :sku, inventory_reservations: %i[sku warehouse])
 
       filename = "orders-report-#{Time.current.strftime("%Y%m%d-%H%M%S")}.csv"
 
@@ -45,6 +45,8 @@ module Admin
         out << [
           "order_id",
           "created_at",
+          "first_fulfilled_at",
+          "last_fulfilled_at",
           "status",
           "customer_email",
           "user_id",
@@ -58,7 +60,8 @@ module Admin
           "reserved_qty_total",
           "reserved_fulfilled_qty_total",
           "reservation_count",
-          "warehouse_count_allocated"
+          "warehouse_count_allocated",
+          "fulfillment_count"
         ]
 
         orders.each do |o|
@@ -67,12 +70,16 @@ module Admin
           reserved_qty = o.inventory_reservations.sum(&:quantity)
           reserved_fulfilled_qty = o.inventory_reservations.sum(&:fulfilled_quantity)
           wh_count = o.inventory_reservations.map(&:warehouse_id).uniq.size
+          first_fulfilled_at = o.first_fulfilled_at&.iso8601
+          last_fulfilled_at = o.last_fulfilled_at&.iso8601
           total_paise = o.order_lines.sum { |l| l.quantity.to_i * l.sku.price_cents.to_i }
           total_inr = format("%.2f", total_paise.to_i / 100.0)
 
           out << [
             o.id,
             o.created_at&.iso8601,
+            first_fulfilled_at,
+            last_fulfilled_at,
             o.status,
             o.customer_email,
             o.user_id,
@@ -86,7 +93,8 @@ module Admin
             reserved_qty,
             reserved_fulfilled_qty,
             o.inventory_reservations.size,
-            wh_count
+            wh_count,
+            o.fulfillments.size
           ]
         end
       end

@@ -34,7 +34,9 @@ module WarehouseOrderApi
     # These settings can be overridden in specific environments using the files
     # in config/environments, which are processed later.
     #
-    # config.time_zone = "Central Time (US & Canada)"
+    # Default to IST for all displayed timestamps.
+    # Store in DB as UTC (ActiveRecord default), display in Asia/Kolkata.
+    config.time_zone = "Asia/Kolkata"
     # config.eager_load_paths << Rails.root.join("extras")
 
     # Only loads a smaller set of middleware suitable for API only apps.

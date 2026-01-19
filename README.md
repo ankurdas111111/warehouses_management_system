@@ -83,6 +83,16 @@ chmod +x bin/sidekiq
 bin/sidekiq
 ```
 
+### Run Sidekiq locally against remote services (Render + Upstash)
+If you deploy the web app on Render but only want to run Sidekiq **on-demand** from your laptop, create a local env file and use the helper script:
+
+```bash
+cp env.sidekiq-remote.example .env.sidekiq-remote
+# edit .env.sidekiq-remote and fill DATABASE_URL, REDIS_URL, RAILS_MASTER_KEY
+chmod +x bin/sidekiq-remote
+bin/sidekiq-remote
+```
+
 ## UI
 ### User UI (JWT cookie)
 - Sign up: `GET /signup`
