@@ -1,9 +1,17 @@
 <div class="card">
-  <h2>New Warehouse</h2>
+  <div class="page-header">
+    <div>
+      <h2>New Warehouse</h2>
+      <p class="muted">Add a new warehouse location.</p>
+    </div>
+    <div class="page-actions">
+      <a class="btn secondary" href="<%= admin_warehouses_path %>">Back</a>
+    </div>
+  </div>
   <%= render "form", warehouse: @warehouse %>
 
   <% if @warehouse.errors.any? %>
-    <div class="error" style="margin-top:12px;">
+    <div class="error mt-12">
       <%= @warehouse.errors.full_messages.join(", ") %>
     </div>
   <% end %>

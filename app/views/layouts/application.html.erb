@@ -5,57 +5,328 @@
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <%= csrf_meta_tags %>
     <style>
-      body { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; margin: 24px; color: #111; }
-      a { color: #0b5; text-decoration: none; }
-      a:hover { text-decoration: underline; }
-      header { display: flex; gap: 16px; align-items: center; margin-bottom: 20px; }
-      header .spacer { flex: 1; }
-      .card { border: 1px solid #e5e5e5; border-radius: 10px; padding: 16px; max-width: 980px; }
-      .muted { color: #666; }
-      .error { background: #fff1f1; border: 1px solid #ffcccc; padding: 10px; border-radius: 8px; color: #900; }
-      .notice { background: #f3fff7; border: 1px solid #c9f2d8; padding: 10px; border-radius: 8px; color: #064; }
-      .field-error { color: #900; font-size: 12px; margin-top: 4px; min-height: 16px; }
-      .input-invalid { border-color: #ffcccc; background: #fff8f8; }
-      table { border-collapse: collapse; width: 100%; }
-      th, td { border-bottom: 1px solid #eee; padding: 10px; text-align: left; }
-      th { background: #fafafa; }
-      input, select { padding: 8px; border: 1px solid #ddd; border-radius: 8px; }
-      button { padding: 10px 12px; border-radius: 10px; border: 1px solid #ddd; background: #111; color: #fff; cursor: pointer; }
-      button.secondary { background: #fff; color: #111; }
+      :root {
+        --bg: #0b0f19;
+        --bg2: #0f172a;
+        --surface: rgba(255, 255, 255, 0.06);
+        --surface-2: rgba(255, 255, 255, 0.10);
+        --card: rgba(255, 255, 255, 0.08);
+        --card-border: rgba(255, 255, 255, 0.12);
+        --text: rgba(255, 255, 255, 0.92);
+        --muted: rgba(255, 255, 255, 0.62);
+        --accent: #22c55e; /* emerald */
+        --accent2: #10b981;
+        --danger: #fb7185;
+        --warning: #fbbf24;
+        --shadow: 0 20px 45px rgba(0, 0, 0, 0.45);
+        --shadow-sm: 0 10px 20px rgba(0, 0, 0, 0.35);
+        --ring: 0 0 0 4px rgba(34, 197, 94, 0.18);
+      }
+
+      * { box-sizing: border-box; }
+      html, body { height: 100%; }
+      body {
+        margin: 0;
+        color: var(--text);
+        font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+        line-height: 1.45;
+        background:
+          radial-gradient(1200px 600px at 20% -10%, rgba(34, 197, 94, 0.18), transparent 60%),
+          radial-gradient(900px 500px at 90% 0%, rgba(59, 130, 246, 0.16), transparent 55%),
+          linear-gradient(180deg, var(--bg), var(--bg2));
+      }
+
+      a { color: var(--text); text-decoration: none; }
+      a:hover { color: rgba(255, 255, 255, 0.98); }
+      a.muted, .muted { color: var(--muted); }
+
+      .container { max-width: 1100px; margin: 0 auto; padding: 18px; }
+      @media (min-width: 900px) { .container { padding: 26px; } }
+      @media (max-width: 640px) { .container { padding: 14px; } }
+
+      header {
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        background: linear-gradient(180deg, rgba(11, 15, 25, 0.92), rgba(11, 15, 25, 0.65));
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      }
+      .topbar { display: flex; align-items: center; gap: 12px; padding: 14px 0; min-width: 0; }
+      .brand { display: flex; gap: 10px; align-items: center; font-weight: 700; letter-spacing: 0.2px; }
+      .brand-badge { width: 10px; height: 10px; border-radius: 999px; background: linear-gradient(135deg, var(--accent), #60a5fa); box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.12); }
+      .spacer { flex: 1; }
+
+      .nav { display: flex; gap: 8px; flex-wrap: wrap; min-width: 0; }
+      .nav a {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 10px;
+        border-radius: 12px;
+        color: rgba(255, 255, 255, 0.78);
+        border: 1px solid transparent;
+      }
+      .nav a:hover { background: rgba(255, 255, 255, 0.06); color: rgba(255, 255, 255, 0.92); }
+      .nav a.active { background: rgba(255, 255, 255, 0.08); border-color: rgba(255, 255, 255, 0.14); color: rgba(255, 255, 255, 0.95); }
+
+      @media (max-width: 640px) {
+        header {
+          /* Mobile Safari can skip backdrop blur; keep contrast strong. */
+          background: rgba(11, 15, 25, 0.95);
+        }
+
+        .topbar {
+          display: grid;
+          grid-template-columns: 1fr auto;
+          grid-template-areas:
+            "brand user"
+            "nav nav";
+          gap: 10px;
+          padding: 12px 0;
+        }
+        .brand { grid-area: brand; min-width: 0; }
+        .nav { grid-area: nav; }
+        .user-actions { grid-area: user; justify-self: end; min-width: 0; }
+        .spacer { display: none; }
+
+        /* Keep nav readable + prevent weird wrapped states on tiny widths */
+        .nav {
+          order: 3;
+          width: 100%;
+          flex-wrap: nowrap;
+          overflow-x: auto;
+          padding-bottom: 2px;
+          scrollbar-width: none;
+          -webkit-overflow-scrolling: touch;
+        }
+        .nav::-webkit-scrollbar { display: none; }
+        .nav a {
+          flex: 0 0 auto;
+          background: rgba(255, 255, 255, 0.06);
+          border-color: rgba(255, 255, 255, 0.10);
+          color: rgba(255, 255, 255, 0.88);
+        }
+        .nav a:hover { background: rgba(255, 255, 255, 0.08); }
+        .nav a.active { background: rgba(255, 255, 255, 0.12); border-color: rgba(255, 255, 255, 0.18); }
+      }
+
+      .card {
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.09), rgba(255, 255, 255, 0.06));
+        border: 1px solid var(--card-border);
+        border-radius: 16px;
+        padding: 18px;
+        box-shadow: var(--shadow-sm);
+        width: 100%;
+      }
+      @media (min-width: 900px) { .card { padding: 20px; } }
+      @media (max-width: 640px) { .card { padding: 14px; } }
+      .card + .card { margin-top: 14px; }
+
+      .error, .notice {
+        padding: 12px 12px;
+        border-radius: 14px;
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        background: rgba(255, 255, 255, 0.06);
+      }
+      .error { border-color: rgba(251, 113, 133, 0.30); background: rgba(251, 113, 133, 0.10); color: rgba(255, 255, 255, 0.92); }
+      .notice { border-color: rgba(34, 197, 94, 0.26); background: rgba(34, 197, 94, 0.10); color: rgba(255, 255, 255, 0.92); }
+
+      h1, h2, h3 { margin: 0 0 10px; letter-spacing: 0.1px; }
+      p { margin: 10px 0; }
+
+      code { background: rgba(255, 255, 255, 0.10); padding: 2px 6px; border-radius: 8px; }
+
       .row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
       .row > * { margin: 4px 0; }
-      code { background: #f6f6f6; padding: 2px 6px; border-radius: 6px; }
+      .inline { display: inline; }
+      .justify-end { justify-content: flex-end; }
+      .justify-between { justify-content: space-between; }
+      .align-end { align-items: flex-end; }
+      .gap-10 { gap: 10px; }
+      .mt-8 { margin-top: 8px; }
+      .mt-10 { margin-top: 10px; }
+      .mt-12 { margin-top: 12px; }
+      .mt-16 { margin-top: 16px; }
+      .m-0 { margin: 0; }
+      .mb-10 { margin-bottom: 10px; }
+      .mb-12 { margin-bottom: 12px; }
+      .my-10 { margin: 10px 0; }
+
+      input, select, textarea {
+        padding: 10px 12px;
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        border-radius: 12px;
+        background: rgba(0, 0, 0, 0.20);
+        color: rgba(255, 255, 255, 0.92);
+        max-width: 100%;
+        outline: none;
+      }
+      input::placeholder { color: rgba(255, 255, 255, 0.40); }
+      input:focus, select:focus, textarea:focus { border-color: rgba(34, 197, 94, 0.45); box-shadow: var(--ring); }
+      select { background: rgba(0, 0, 0, 0.18); }
+
+      button, .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        padding: 10px 14px;
+        border-radius: 12px;
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        background: linear-gradient(135deg, rgba(34, 197, 94, 0.92), rgba(16, 185, 129, 0.86));
+        color: rgba(0, 0, 0, 0.92);
+        font-weight: 700;
+        cursor: pointer;
+        box-shadow: 0 10px 25px rgba(34, 197, 94, 0.18);
+      }
+      button:hover, .btn:hover { filter: brightness(1.03); transform: translateY(-1px); }
+      button:active, .btn:active { transform: translateY(0); }
+      button.secondary, .btn.secondary {
+        background: rgba(255, 255, 255, 0.08);
+        color: rgba(255, 255, 255, 0.92);
+        box-shadow: none;
+      }
+      button.secondary:hover, .btn.secondary:hover { background: rgba(255, 255, 255, 0.12); }
+      button[disabled], .btn[disabled] { opacity: 0.55; cursor: not-allowed; transform: none; }
+
+      .btn-icon {
+        padding: 8px 10px;
+        min-width: 38px;
+        height: 38px;
+        border-radius: 12px;
+        line-height: 1;
+      }
+      .btn-sm { padding: 8px 10px; border-radius: 12px; }
+
+      table { border-collapse: collapse; width: 100%; }
+      th, td { padding: 12px 12px; text-align: left; border-bottom: 1px solid rgba(255, 255, 255, 0.10); vertical-align: top; }
+      th { color: rgba(255, 255, 255, 0.78); font-weight: 700; background: rgba(255, 255, 255, 0.06); }
+      tbody tr:hover td { background: rgba(255, 255, 255, 0.04); }
+      @media (max-width: 640px) { th, td { padding: 10px 8px; } }
+
+      .page-header { display: flex; gap: 14px; align-items: flex-start; justify-content: space-between; margin-bottom: 14px; }
+      .page-header h2 { margin: 0; }
+      .page-header p { margin: 6px 0 0; }
+      .page-actions { display: flex; gap: 10px; flex-wrap: wrap; justify-content: flex-end; align-items: center; }
+      @media (max-width: 640px) {
+        .page-header { flex-direction: column; align-items: flex-start; }
+        .page-actions { width: 100%; justify-content: flex-start; }
+      }
+
+      .empty {
+        padding: 14px;
+        border-radius: 14px;
+        border: 1px dashed rgba(255, 255, 255, 0.16);
+        background: rgba(255, 255, 255, 0.04);
+      }
+
+      .wrap { white-space: normal; overflow-wrap: anywhere; word-break: break-word; }
+      .help { font-size: 12px; color: var(--muted); margin-top: 6px; }
+
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 4px 10px;
+        border-radius: 999px;
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 0.2px;
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        background: rgba(255, 255, 255, 0.08);
+        color: rgba(255, 255, 255, 0.88);
+      }
+      .badge--success { border-color: rgba(34, 197, 94, 0.30); background: rgba(34, 197, 94, 0.14); }
+      .badge--info { border-color: rgba(96, 165, 250, 0.30); background: rgba(96, 165, 250, 0.14); }
+      .badge--warning { border-color: rgba(251, 191, 36, 0.30); background: rgba(251, 191, 36, 0.14); }
+      .badge--danger { border-color: rgba(251, 113, 133, 0.30); background: rgba(251, 113, 133, 0.14); }
+      .badge--neutral { border-color: rgba(255, 255, 255, 0.14); background: rgba(255, 255, 255, 0.08); }
+
+      .field-error { color: rgba(255, 255, 255, 0.92); font-size: 12px; margin-top: 4px; min-height: 16px; }
+      .input-invalid { border-color: rgba(251, 113, 133, 0.45); background: rgba(251, 113, 133, 0.08); }
+
+      .pill {
+        display: inline-flex;
+        align-items: center;
+        padding: 4px 10px;
+        border-radius: 999px;
+        font-size: 12px;
+        border: 1px solid rgba(255, 255, 255, 0.16);
+        background: rgba(255, 255, 255, 0.08);
+        color: rgba(255, 255, 255, 0.82);
+      }
+
+      .table-scroll { width: 100%; overflow-x: auto; }
+      #lines { table-layout: fixed; min-width: 720px; }
+      #lines select, #lines input { width: 100%; min-width: 0; }
+      #lines col.col-sku { width: 38%; }
+      #lines col.col-qty { width: 8%; }
+      #lines col.col-avail { width: 20%; }
+      #lines col.col-unit { width: 12%; }
+      #lines col.col-total { width: 12%; }
+      #lines col.col-remove { width: 10%; }
+
+      #lines .qty-input { width: 100%; min-width: 56px; }
+      #lines .right { text-align: right; }
+      @media (max-width: 640px) { #lines .btn-sm { padding: 7px 9px; font-size: 12px; } }
+
+      .hidden { display: none !important; }
+      .w-140 { width: min(140px, 100%); }
+      .w-180 { width: min(180px, 100%); }
+      .w-380 { width: min(380px, 100%); }
     </style>
   </head>
   <body>
     <header>
-      <strong>Warehouse Management</strong>
-      <a href="<%= root_path %>">Place Order</a>
-      <a href="<%= orders_path %>">My Orders</a>
-      <div class="spacer"></div>
-      <% if Current.user.present? %>
-        <span class="muted"><%= Current.user.email %></span>
-        <a href="<%= wallet_path %>">Wallet</a>
-        <form method="post" action="<%= logout_path %>" style="display:inline">
-          <input type="hidden" name="_method" value="delete">
-          <%= hidden_field_tag :authenticity_token, form_authenticity_token %>
-          <button class="secondary" type="submit">Logout</button>
-        </form>
-      <% else %>
-        <a href="<%= login_path %>">Login</a>
-        <a href="<%= signup_path %>">Sign up</a>
-      <% end %>
-      <a href="<%= admin_root_path %>">Admin</a>
+      <div class="container">
+        <div class="topbar">
+          <div class="brand">
+            <span class="brand-badge"></span>
+            <a href="<%= root_path %>">Warehouse Management</a>
+          </div>
+
+          <nav class="nav">
+            <a href="<%= root_path %>" class="<%= "active" if request.path == root_path %>">Place Order</a>
+            <a href="<%= orders_path %>" class="<%= "active" if request.path.start_with?(orders_path) %>">My Orders</a>
+            <% if Current.user.present? %>
+              <a href="<%= wallet_path %>" class="<%= "active" if request.path == wallet_path %>">Wallet</a>
+            <% end %>
+            <a href="<%= admin_root_path %>" class="<%= "active" if request.path.start_with?(admin_root_path) %>">Admin</a>
+          </nav>
+
+          <div class="spacer"></div>
+
+          <div class="user-actions">
+            <% if Current.user.present? %>
+              <span class="pill"><%= Current.user.email %></span>
+              <form method="post" action="<%= logout_path %>" class="inline">
+                <input type="hidden" name="_method" value="delete">
+                <%= hidden_field_tag :authenticity_token, form_authenticity_token %>
+                <button class="secondary" type="submit">Logout</button>
+              </form>
+            <% else %>
+              <div class="row gap-10">
+                <a class="pill" href="<%= login_path %>">Login</a>
+                <a class="pill" href="<%= signup_path %>">Sign up</a>
+              </div>
+            <% end %>
+          </div>
+        </div>
+      </div>
     </header>
 
-    <% if flash[:alert].present? %>
-      <div class="error" style="margin-bottom: 12px;"><%= flash[:alert] %></div>
-    <% end %>
-    <% if flash[:notice].present? %>
-      <div class="notice" style="margin-bottom: 12px;"><%= flash[:notice] %></div>
-    <% end %>
+    <main class="container">
+      <% if flash[:alert].present? %>
+        <div class="error mb-12"><%= flash[:alert] %></div>
+      <% end %>
+      <% if flash[:notice].present? %>
+        <div class="notice mb-12"><%= flash[:notice] %></div>
+      <% end %>
 
-    <%= yield %>
+      <%= yield %>
+    </main>
   </body>
 </html>
 

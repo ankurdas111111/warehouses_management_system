@@ -1,5 +1,15 @@
 <div class="card">
-  <h2>Inventory</h2>
+  <div class="page-header">
+    <div>
+      <h2>Inventory</h2>
+      <p class="muted">Stock items (SKU × warehouse) with reserved/available breakdown.</p>
+    </div>
+    <div class="page-actions">
+      <a class="btn secondary" href="<%= admin_skus_path %>">SKUs</a>
+      <a class="btn secondary" href="<%= admin_warehouses_path %>">Warehouses</a>
+      <a class="btn secondary" href="<%= admin_root_path %>">Admin home</a>
+    </div>
+  </div>
 
   <form method="get" action="<%= admin_inventory_index_path %>" class="row">
     <label>
@@ -53,42 +63,48 @@
     <button type="submit">Create</button>
   </form>
 
-  <table>
-    <thead>
-      <tr>
-        <th>SKU</th>
-        <th>Warehouse</th>
-        <th>Location</th>
-        <th>On hand</th>
-        <th>Reserved</th>
-        <th>Available</th>
-        <th></th>
-      </tr>
-    </thead>
-    <tbody>
-      <% @stock_items.each do |si| %>
+  <% if @stock_items.empty? %>
+    <div class="empty mt-10">
+      <p class="muted m-0">No stock items match these filters.</p>
+    </div>
+  <% else %>
+    <table>
+      <thead>
         <tr>
-          <td><%= si.sku.code %></td>
-          <td><%= si.warehouse.code %></td>
-          <td class="muted"><%= si.warehouse.location %></td>
-          <td><%= si.on_hand %></td>
-          <td><%= si.reserved %></td>
-          <td><%= si.available %></td>
-          <td>
-            <% if si.reserved.to_i == 0 %>
-              <form method="post" action="<%= admin_inventory_path(si) %>" onsubmit="return confirm('Delete this stock item?');">
-                <%= hidden_field_tag :authenticity_token, form_authenticity_token %>
-                <input type="hidden" name="_method" value="delete">
-                <button type="submit" class="secondary">Delete</button>
-              </form>
-            <% else %>
-              <span class="muted">Locked</span>
-            <% end %>
-          </td>
+          <th>SKU</th>
+          <th>Warehouse</th>
+          <th>Location</th>
+          <th>On hand</th>
+          <th>Reserved</th>
+          <th>Available</th>
+          <th></th>
         </tr>
-      <% end %>
-    </tbody>
-  </table>
+      </thead>
+      <tbody>
+        <% @stock_items.each do |si| %>
+          <tr>
+            <td><%= si.sku.code %></td>
+            <td><%= si.warehouse.code %></td>
+            <td class="muted"><%= si.warehouse.location %></td>
+            <td><%= si.on_hand %></td>
+            <td><%= si.reserved %></td>
+            <td><%= si.available %></td>
+            <td>
+              <% if si.reserved.to_i == 0 %>
+                <form method="post" action="<%= admin_inventory_path(si) %>" onsubmit="return confirm('Delete this stock item?');">
+                  <%= hidden_field_tag :authenticity_token, form_authenticity_token %>
+                  <input type="hidden" name="_method" value="delete">
+                  <button type="submit" class="secondary">Delete</button>
+                </form>
+              <% else %>
+                <span class="badge badge--warning">Locked</span>
+              <% end %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  <% end %>
 </div>
 
 

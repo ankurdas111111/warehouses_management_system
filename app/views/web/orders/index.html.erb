@@ -1,17 +1,26 @@
 <div class="card">
-  <h2>My Orders</h2>
-  <p class="muted">
-    Shows orders for the logged-in user.
-  </p>
+  <div class="page-header">
+    <div>
+      <h2>My Orders</h2>
+      <p class="muted">Shows orders for the logged-in user.</p>
+    </div>
+    <div class="page-actions">
+      <a class="btn secondary" href="<%= root_path %>">Place order</a>
+    </div>
+  </div>
 
   <% if @orders.empty? %>
-    <p class="muted">No orders found.</p>
+    <div class="empty">
+      <p class="muted m-0 mb-10">No orders found.</p>
+      <a class="btn" href="<%= root_path %>">Place your first order</a>
+    </div>
   <% else %>
     <table>
       <thead>
         <tr>
           <th>Order</th>
           <th>Status</th>
+          <th>Payment</th>
           <th>Customer</th>
           <th>Created</th>
           <th>Fulfilled</th>
@@ -22,7 +31,8 @@
         <% @orders.each do |o| %>
           <tr>
             <td><a href="<%= order_path(o) %>">#<%= o.id %></a></td>
-            <td><%= o.status %></td>
+            <td><span class="<%= badge_class_for_order_status(o.status) %>"><%= o.status.humanize %></span></td>
+            <td><span class="<%= badge_class_for_payment_status(o.payment_status) %>"><%= o.payment_status.humanize %></span></td>
             <td><%= o.customer_email %></td>
             <td><%= o.created_at&.strftime("%Y-%m-%d %H:%M IST") %></td>
             <td><%= o.last_fulfilled_at ? o.last_fulfilled_at.strftime("%Y-%m-%d %H:%M IST") : "-" %></td>

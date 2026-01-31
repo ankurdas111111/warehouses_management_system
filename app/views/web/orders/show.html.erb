@@ -1,15 +1,31 @@
 <div class="card">
-  <h2>Order <code>#<%= @order.id %></code></h2>
-  <p>Status: <strong><%= @order.status %></strong></p>
-  <p class="muted">
-    Customer: <%= @order.customer_email %><br>
-    Created (IST): <%= @order.created_at&.strftime("%Y-%m-%d %H:%M IST") %><br>
-    Idempotency key: <code><%= @order.idempotency_key %></code>
-    <% if @order.delivery_city.present? %><br>Delivery city: <%= @order.delivery_city %><% end %>
-    <br>Payment: <strong><%= @order.payment_status %></strong>
+  <div class="page-header">
+    <div>
+      <h2>Order <code>#<%= @order.id %></code></h2>
+      <p class="muted">
+        Customer: <%= @order.customer_email %>
+        <% if @order.delivery_city.present? %> · Delivery city: <%= @order.delivery_city %><% end %>
+      </p>
+    </div>
+    <div class="page-actions">
+      <% if @order.payment_pending? && !@order.cancelled? && !@order.fulfilled? %>
+        <a class="btn" href="<%= new_payment_path(order_id: @order.id) %>">Pay now</a>
+      <% end %>
+      <a class="btn secondary" href="<%= orders_path %>">Back</a>
+    </div>
+  </div>
+
+  <div class="row muted">
+    <span>Status: <span class="<%= badge_class_for_order_status(@order.status) %>"><%= @order.status.humanize %></span></span>
+    <span>Payment: <span class="<%= badge_class_for_payment_status(@order.payment_status) %>"><%= @order.payment_status.humanize %></span></span>
+    <span>Created: <strong><%= @order.created_at&.strftime("%Y-%m-%d %H:%M IST") %></strong></span>
     <% if (t = @order.last_fulfilled_at).present? %>
-      <br>Last fulfilled (IST): <strong><%= t.strftime("%Y-%m-%d %H:%M IST") %></strong>
+      <span>Last fulfilled: <strong><%= t.strftime("%Y-%m-%d %H:%M IST") %></strong></span>
     <% end %>
+  </div>
+
+  <p class="muted mt-10">
+    Idempotency key: <code><%= @order.idempotency_key %></code>
   </p>
 
   <% total_qty = @order.order_lines.sum(&:quantity) %>
@@ -24,16 +40,13 @@
     <span><strong>Reserved fulfilled</strong>: <%= total_reserved_fulfilled %></span>
   </div>
 
-  <div class="row" style="margin-top: 10px;">
+  <div class="row mt-10">
     <% if @order.cancelled? %>
       <span class="muted">This order is cancelled.</span>
     <% elsif @order.fulfilled? %>
       <span class="muted">This order is fulfilled.</span>
     <% else %>
-      <% if @order.payment_pending? %>
-        <a href="<%= new_payment_path(order_id: @order.id) %>">Pay now</a>
-      <% end %>
-      <form method="post" action="<%= cancel_order_path(@order) %>" style="display:inline">
+      <form method="post" action="<%= cancel_order_path(@order) %>" class="inline">
         <%= hidden_field_tag :authenticity_token, form_authenticity_token %>
         <button class="secondary" type="submit" onclick="return confirm('Cancel this order?');">Cancel order</button>
       </form>
@@ -86,7 +99,7 @@
           <td><%= r.quantity %></td>
           <td><%= r.fulfilled_quantity %></td>
           <td><%= r.remaining_quantity %></td>
-          <td><%= r.status %></td>
+          <td><span class="<%= badge_class_for_reservation_status(r.status) %>"><%= r.status.humanize %></span></td>
         </tr>
       <% end %>
     </tbody>
@@ -97,11 +110,11 @@
     <p class="muted">No fulfillments created yet.</p>
   <% else %>
     <% @order.fulfillments.order(:id).each do |f| %>
-      <div class="card" style="margin-top: 12px;">
+      <div class="card mt-12">
         <p class="muted">
           Fulfillment <code>#<%= f.id %></code>
           — Warehouse: <%= f.warehouse.code %> (<%= f.warehouse.location %>)
-          — Status: <strong><%= f.status %></strong>
+          — Status: <span class="<%= badge_class_for_fulfillment_status(f.status) %>"><%= f.status.humanize %></span>
         </p>
 
         <table>

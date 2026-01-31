@@ -1,5 +1,13 @@
 <div class="card">
-  <h2>Wallets</h2>
+  <div class="page-header">
+    <div>
+      <h2>Wallets</h2>
+      <p class="muted">Search a user and credit their wallet.</p>
+    </div>
+    <div class="page-actions">
+      <a class="btn secondary" href="<%= admin_root_path %>">Admin home</a>
+    </div>
+  </div>
 
   <form method="get" action="<%= admin_wallets_path %>" class="row">
     <label>
@@ -10,9 +18,7 @@
   </form>
 
   <% if @user %>
-    <p class="muted" style="margin-top: 10px;">
-      User: <strong><%= @user.email %></strong>
-    </p>
+    <p class="muted mt-10">User: <strong><%= @user.email %></strong></p>
     <p class="muted">
       Wallet balance: <strong><%= format("₹%.2f", @wallet&.balance_paise.to_i / 100.0) %></strong>
       <span class="muted">(<%= @wallet&.balance_paise.to_i %> paise)</span>
@@ -29,7 +35,9 @@
       <button type="submit">Credit</button>
     </form>
   <% else %>
-    <p class="muted" style="margin-top: 10px;">Search by email to view/credit a user's wallet.</p>
+    <div class="empty mt-10">
+      <p class="muted m-0">Search by email to view/credit a user's wallet.</p>
+    </div>
   <% end %>
 </div>
 

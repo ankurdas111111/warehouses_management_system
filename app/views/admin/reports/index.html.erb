@@ -1,6 +1,13 @@
 <div class="card">
-  <h2>Reports (CSV)</h2>
-  <p class="muted">Exports are CSV and open cleanly in Excel/Google Sheets.</p>
+  <div class="page-header">
+    <div>
+      <h2>Reports (CSV)</h2>
+      <p class="muted">Exports are CSV and open cleanly in Excel/Google Sheets.</p>
+    </div>
+    <div class="page-actions">
+      <a class="btn secondary" href="<%= admin_root_path %>">Admin home</a>
+    </div>
+  </div>
 
   <h3>Orders report</h3>
   <form method="get" action="<%= admin_reports_path %>" class="row">
@@ -24,12 +31,12 @@
     <button type="submit" class="secondary">Apply</button>
   </form>
 
-  <div class="row" style="margin-top: 8px;">
-    <a href="<%= admin_reports_orders_path(format: :csv, from: @from, to: @to, status: @status) %>">Download Orders CSV</a>
+  <div class="row mt-8">
+    <a class="btn secondary" href="<%= admin_reports_orders_path(format: :csv, from: @from, to: @to, status: @status) %>">Download Orders CSV</a>
   </div>
 </div>
 
-<div class="card" style="margin-top: 16px;">
+<div class="card mt-16">
   <h3>Inventory snapshot</h3>
   <p class="muted">Snapshot of stock items (SKU × warehouse) at export time.</p>
 
@@ -64,8 +71,8 @@
     <button type="submit" class="secondary">Apply</button>
   </form>
 
-  <div class="row" style="margin-top: 8px;">
-    <a href="<%= admin_reports_inventory_path(format: :csv, location: @location, sku_code: @sku_code, warehouse_code: @warehouse_code) %>">Download Inventory CSV</a>
+  <div class="row mt-8">
+    <a class="btn secondary" href="<%= admin_reports_inventory_path(format: :csv, location: @location, sku_code: @sku_code, warehouse_code: @warehouse_code) %>">Download Inventory CSV</a>
   </div>
 </div>
 

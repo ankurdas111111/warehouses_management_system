@@ -1,5 +1,13 @@
 <div class="card">
-  <h2>Login</h2>
+  <div class="page-header">
+    <div>
+      <h2>Login</h2>
+      <p class="muted">Welcome back — sign in to place orders and manage your wallet.</p>
+    </div>
+    <div class="page-actions">
+      <a class="btn secondary" href="<%= signup_path %>">Create account</a>
+    </div>
+  </div>
 
   <% if @error.present? %>
     <div class="error"><%= @error %></div>
@@ -21,7 +29,7 @@
 
     <div class="row">
       <button type="submit">Login</button>
-      <a class="muted" href="<%= signup_path %>">Create account</a>
+      <a class="btn secondary" href="<%= signup_path %>">Create account</a>
     </div>
   </form>
 </div>

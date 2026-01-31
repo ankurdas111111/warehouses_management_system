@@ -1,22 +1,24 @@
 <div class="card">
-  <h2>Payment</h2>
-  <p class="muted">
-    Key ID: <code><%= DummyGateway.key_id %></code><br>
-    Provider Order ID: <code><%= @provider_order_id %></code><br>
-    Delivery city: <%= @order.delivery_city %><br>
-    Payment status: <strong><%= @order.payment_status %></strong>
-  </p>
+  <div class="page-header">
+    <div>
+      <h2>Payment</h2>
+      <p class="muted">
+        Provider Order ID: <code><%= @provider_order_id %></code>
+        <% if @order.delivery_city.present? %> · Delivery city: <%= @order.delivery_city %><% end %>
+      </p>
+    </div>
+    <div class="page-actions">
+      <span class="<%= badge_class_for_payment_status(@order.payment_status) %>"><%= @order.payment_status.humanize %></span>
+      <a class="btn secondary" href="<%= order_path(@order) %>">Back</a>
+    </div>
+  </div>
 
   <% total_paise = @order.total_paise %>
-  <p>
-    Amount: <strong><%= format("₹%.2f", total_paise / 100.0) %></strong>
-  </p>
+  <p class="muted">Amount: <strong><%= format("₹%.2f", total_paise / 100.0) %></strong></p>
 
   <% wallet = current_user.wallet %>
   <% wallet_balance = wallet&.balance_paise.to_i %>
-  <p class="muted">
-    Wallet balance: <strong><%= format("₹%.2f", wallet_balance / 100.0) %></strong>
-  </p>
+  <p class="muted">Wallet balance: <strong><%= format("₹%.2f", wallet_balance / 100.0) %></strong></p>
 
   <div class="row">
     <form method="post" action="<%= wallet_payments_path(order_id: @order.id) %>">
@@ -26,10 +28,8 @@
       </button>
     </form>
 
-    <a href="<%= gateway_checkout_path(payment_id: @payment.id) %>">Proceed to checkout</a>
-
-    <a class="muted" href="<%= wallet_path %>">Recharge wallet</a>
-    <a class="muted" href="<%= order_path(@order) %>">Back to order</a>
+    <a class="btn" href="<%= gateway_checkout_path(payment_id: @payment.id) %>">Proceed to checkout</a>
+    <a class="btn secondary" href="<%= wallet_path %>">Recharge wallet</a>
   </div>
 </div>
 

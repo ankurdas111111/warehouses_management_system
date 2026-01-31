@@ -1,23 +1,34 @@
 <div class="card">
-  <h2>
-    <% if @payment.payable_type == "Wallet" %>
-      Hosted Checkout (Wallet Top-up)
-    <% else %>
-      Hosted Checkout (Dummy)
-    <% end %>
-  </h2>
-  <p class="muted">
-    Provider Order ID: <code><%= @payment.provider_order_id %></code><br>
-    Amount: <strong><%= format("₹%.2f", @payment.amount_paise.to_i / 100.0) %></strong><br>
-    Currency: INR
-  </p>
+  <div class="page-header">
+    <div>
+      <h2>
+        <% if @payment.payable_type == "Wallet" %>
+          Hosted Checkout (Wallet Top-up)
+        <% else %>
+          Hosted Checkout
+        <% end %>
+      </h2>
+      <p class="muted">
+        Provider Order ID: <code><%= @payment.provider_order_id %></code>
+        · Amount: <strong><%= format("₹%.2f", @payment.amount_paise.to_i / 100.0) %></strong>
+      </p>
+    </div>
+    <div class="page-actions">
+      <span class="<%= badge_class_for_payment_status(@payment.status) %>"><%= @payment.status.humanize %></span>
+      <% if @order.present? %>
+        <a class="btn secondary" href="<%= new_payment_path(order_id: @order.id) %>">Back</a>
+      <% else %>
+        <a class="btn secondary" href="<%= wallet_path %>">Back</a>
+      <% end %>
+    </div>
+  </div>
 
   <p class="muted">
     This simulates a third-party hosted checkout page. Enter card details below.
   </p>
 
   <% if defined?(@errors) && @errors.present? %>
-    <div class="error" style="margin: 10px 0;">
+    <div class="error my-10">
       <strong>Fix the following:</strong>
       <ul>
         <% @errors.each do |e| %>
@@ -56,14 +67,10 @@
       </label>
     </div>
 
-    <div class="row" style="margin-top: 10px;">
+    <div class="row mt-10">
       <button id="gateway-pay-btn" type="submit">Pay</button>
       <button class="secondary" type="submit" name="simulate_failure" value="1">Fail</button>
-      <% if @order.present? %>
-        <a class="muted" href="<%= new_payment_path(order_id: @order.id) %>">Back</a>
-      <% else %>
-        <a class="muted" href="<%= wallet_path %>">Back</a>
-      <% end %>
+      <%# Back link is already in header actions %>
     </div>
   </form>
 </div>

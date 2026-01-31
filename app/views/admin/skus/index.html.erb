@@ -1,7 +1,16 @@
 <div class="card">
-  <h2>SKUs (<%= @total.to_i %>)</h2>
+  <div class="page-header">
+    <div>
+      <h2>SKUs</h2>
+      <p class="muted">Total: <strong><%= @total.to_i %></strong></p>
+    </div>
+    <div class="page-actions">
+      <a class="btn secondary" href="<%= admin_inventory_index_path %>">Inventory</a>
+      <a class="btn secondary" href="<%= admin_root_path %>">Admin home</a>
+    </div>
+  </div>
 
-  <form method="get" action="<%= admin_skus_path %>" class="row" style="margin-top:10px;">
+  <form method="get" action="<%= admin_skus_path %>" class="row mt-10">
     <label>
       Search<br>
       <input name="q" value="<%= @q.to_s %>" placeholder="code/name">
@@ -11,55 +20,61 @@
     <a class="muted" href="<%= admin_skus_path %>">Clear</a>
   </form>
 
-  <table>
-    <thead>
-      <tr>
-        <th>Code</th>
-        <th>Name</th>
-        <th>Price (INR)</th>
-        <th></th>
-      </tr>
-    </thead>
-    <tbody>
-      <% @skus.each do |s| %>
-        <tr data-sku-row="<%= s.id %>">
-          <td>
-            <span data-view><%= s.code %></span>
-            <input data-edit name="sku[code]" value="<%= s.code %>" style="display:none; width: 180px;" required>
-          </td>
-          <td>
-            <span data-view><%= s.name %></span>
-            <input data-edit name="sku[name]" value="<%= s.name %>" style="display:none; width: 380px;" required>
-          </td>
-          <td>
-            <span data-view><%= s.respond_to?(:price_inr_display) ? s.price_inr_display : (s.price_cents.to_i / 100.0) %></span>
-            <input data-edit name="sku[price_inr]" value="<%= s.respond_to?(:price_inr) ? format('%.2f', s.price_inr) : format('%.2f', (s.price_cents.to_i / 100.0)) %>" style="display:none; width: 140px;" required>
-          </td>
-          <td class="row" style="justify-content:flex-end;">
-            <button type="button" class="secondary" data-edit-btn>Edit</button>
-
-            <form data-update-form method="post" action="<%= admin_sku_path(s) %>" style="display:none;">
-              <%= hidden_field_tag :authenticity_token, form_authenticity_token %>
-              <input type="hidden" name="_method" value="patch">
-              <input type="hidden" name="sku[code]" value="<%= s.code %>" data-hidden-code>
-              <input type="hidden" name="sku[name]" value="<%= s.name %>" data-hidden-name>
-              <input type="hidden" name="sku[price_inr]" value="<%= s.respond_to?(:price_inr) ? format('%.2f', s.price_inr) : format('%.2f', (s.price_cents.to_i / 100.0)) %>" data-hidden-price>
-              <button type="submit">Save</button>
-              <button type="button" class="secondary" data-cancel-btn>Cancel</button>
-            </form>
-
-            <form method="post" action="<%= admin_sku_path(s) %>" onsubmit="return confirm('Delete this SKU?');">
-              <%= hidden_field_tag :authenticity_token, form_authenticity_token %>
-              <input type="hidden" name="_method" value="delete">
-              <button type="submit" class="secondary">Delete</button>
-            </form>
-          </td>
+  <% if @skus.empty? %>
+    <div class="empty mt-10">
+      <p class="muted m-0">No SKUs found.</p>
+    </div>
+  <% else %>
+    <table>
+      <thead>
+        <tr>
+          <th>Code</th>
+          <th>Name</th>
+          <th>Price (INR)</th>
+          <th></th>
         </tr>
-      <% end %>
-    </tbody>
-  </table>
+      </thead>
+      <tbody>
+        <% @skus.each do |s| %>
+          <tr data-sku-row="<%= s.id %>">
+            <td>
+              <span data-view><%= s.code %></span>
+              <input data-edit name="sku[code]" value="<%= s.code %>" class="hidden w-180" required>
+            </td>
+            <td>
+              <span data-view><%= s.name %></span>
+              <input data-edit name="sku[name]" value="<%= s.name %>" class="hidden w-380" required>
+            </td>
+            <td>
+              <span data-view><%= s.respond_to?(:price_inr_display) ? s.price_inr_display : (s.price_cents.to_i / 100.0) %></span>
+              <input data-edit name="sku[price_inr]" value="<%= s.respond_to?(:price_inr) ? format('%.2f', s.price_inr) : format('%.2f', (s.price_cents.to_i / 100.0)) %>" class="hidden w-140" required>
+            </td>
+            <td class="row justify-end">
+              <button type="button" class="secondary" data-edit-btn>Edit</button>
 
-  <div class="row" style="justify-content:space-between; margin-top: 10px;">
+              <form data-update-form method="post" action="<%= admin_sku_path(s) %>" class="hidden">
+                <%= hidden_field_tag :authenticity_token, form_authenticity_token %>
+                <input type="hidden" name="_method" value="patch">
+                <input type="hidden" name="sku[code]" value="<%= s.code %>" data-hidden-code>
+                <input type="hidden" name="sku[name]" value="<%= s.name %>" data-hidden-name>
+                <input type="hidden" name="sku[price_inr]" value="<%= s.respond_to?(:price_inr) ? format('%.2f', s.price_inr) : format('%.2f', (s.price_cents.to_i / 100.0)) %>" data-hidden-price>
+                <button type="submit">Save</button>
+                <button type="button" class="secondary" data-cancel-btn>Cancel</button>
+              </form>
+
+              <form method="post" action="<%= admin_sku_path(s) %>" onsubmit="return confirm('Delete this SKU?');">
+                <%= hidden_field_tag :authenticity_token, form_authenticity_token %>
+                <input type="hidden" name="_method" value="delete">
+                <button type="submit" class="secondary">Delete</button>
+              </form>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  <% end %>
+
+  <div class="row justify-between mt-10">
     <% if @page.to_i > 1 %>
       <a class="muted" href="<%= admin_skus_path(q: @q, page: (@page.to_i - 1), per: @per) %>">← Prev</a>
     <% else %>
@@ -81,10 +96,17 @@
       const updateForm = row.querySelector("form[data-update-form]");
       if (!editBtn || !updateForm) return;
 
-      viewEls.forEach((el) => (el.style.display = editing ? "none" : ""));
-      editEls.forEach((el) => (el.style.display = editing ? "" : "none"));
-      editBtn.style.display = editing ? "none" : "";
-      updateForm.style.display = editing ? "inline-flex" : "none";
+      viewEls.forEach((el) => el.classList.toggle("hidden", editing));
+      editEls.forEach((el) => el.classList.toggle("hidden", !editing));
+      editBtn.classList.toggle("hidden", editing);
+
+      if (editing) {
+        updateForm.classList.remove("hidden");
+        updateForm.style.display = "inline-flex";
+      } else {
+        updateForm.classList.add("hidden");
+        updateForm.style.display = "";
+      }
     }
 
     document.querySelectorAll("tr[data-sku-row]").forEach((row) => {

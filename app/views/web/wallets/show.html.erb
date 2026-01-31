@@ -1,8 +1,13 @@
 <div class="card">
-  <h2>Wallet</h2>
-  <p class="muted">
-    Balance: <strong><%= format("₹%.2f", @wallet.balance_paise.to_i / 100.0) %></strong>
-  </p>
+  <div class="page-header">
+    <div>
+      <h2>Wallet</h2>
+      <p class="muted">Balance: <strong><%= format("₹%.2f", @wallet.balance_paise.to_i / 100.0) %></strong></p>
+    </div>
+    <div class="page-actions">
+      <a class="btn secondary" href="<%= root_path %>">Place order</a>
+    </div>
+  </div>
 
   <h3>Recharge (Hosted Checkout)</h3>
   <form method="post" action="<%= wallet_recharge_path %>" class="row">
@@ -14,9 +19,11 @@
     <button type="submit">Proceed to checkout</button>
   </form>
 
-  <h3 style="margin-top:16px;">Recent transactions</h3>
+  <h3 class="mt-16">Recent transactions</h3>
   <% if @txns.empty? %>
-    <p class="muted">No transactions yet.</p>
+    <div class="empty">
+      <p class="muted m-0">No transactions yet.</p>
+    </div>
   <% else %>
     <table>
       <thead>
@@ -32,7 +39,7 @@
         <% @txns.each do |t| %>
           <tr>
             <td class="muted"><%= t.created_at %></td>
-            <td><%= t.kind %></td>
+            <td><span class="badge badge--neutral"><%= t.kind.to_s.humanize %></span></td>
             <td><%= format("₹%.2f", t.amount_paise.to_i / 100.0) %></td>
             <td class="muted"><%= t.reason %></td>
             <td><%= t.order_id ? "##{t.order_id}" : "" %></td>

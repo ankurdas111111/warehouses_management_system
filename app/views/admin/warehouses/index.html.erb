@@ -1,11 +1,16 @@
 <div class="card">
-  <h2>Warehouses</h2>
-  <div class="row">
-    <a href="/admin/warehouses/new">New Warehouse</a>
-    <a class="muted" href="<%= admin_logout_path %>">Logout</a>
+  <div class="page-header">
+    <div>
+      <h2>Warehouses</h2>
+      <p class="muted">Manage warehouse locations and availability routing.</p>
+    </div>
+    <div class="page-actions">
+      <a class="btn" href="/admin/warehouses/new">New warehouse</a>
+      <a class="btn secondary" href="<%= admin_root_path %>">Admin home</a>
+    </div>
   </div>
 
-  <form method="get" action="<%= admin_warehouses_path %>" class="row" style="margin-top:10px;">
+  <form method="get" action="<%= admin_warehouses_path %>" class="row mt-10">
     <label>
       Search<br>
       <input name="q" value="<%= @q.to_s %>" placeholder="code/name/location">
@@ -24,39 +29,45 @@
     <a class="muted" href="<%= admin_warehouses_path %>">Clear</a>
   </form>
 
-  <p class="muted" style="margin-top:8px;">
+  <p class="muted mt-8">
     Showing <strong><%= @warehouses.size %></strong> of <strong><%= @total.to_i %></strong>
   </p>
 
-  <table>
-    <thead>
-      <tr>
-        <th>Code</th>
-        <th>Name</th>
-        <th>Location</th>
-        <th></th>
-      </tr>
-    </thead>
-    <tbody>
-      <% @warehouses.each do |w| %>
+  <% if @warehouses.empty? %>
+    <div class="empty mt-10">
+      <p class="muted m-0">No warehouses found.</p>
+    </div>
+  <% else %>
+    <table>
+      <thead>
         <tr>
-          <td><%= w.code %></td>
-          <td><%= w.name %></td>
-          <td class="muted"><%= w.location %></td>
-          <td class="row" style="justify-content:flex-end;">
-            <a href="/admin/warehouses/<%= w.id %>/edit">Edit</a>
-            <form method="post" action="<%= admin_warehouse_path(w) %>" onsubmit="return confirm('Delete this warehouse?');">
-              <%= hidden_field_tag :authenticity_token, form_authenticity_token %>
-              <input type="hidden" name="_method" value="delete">
-              <button type="submit" class="secondary">Delete</button>
-            </form>
-          </td>
+          <th>Code</th>
+          <th>Name</th>
+          <th>Location</th>
+          <th></th>
         </tr>
-      <% end %>
-    </tbody>
-  </table>
+      </thead>
+      <tbody>
+        <% @warehouses.each do |w| %>
+          <tr>
+            <td><%= w.code %></td>
+            <td><%= w.name %></td>
+            <td class="muted"><%= w.location %></td>
+            <td class="row justify-end">
+              <a class="btn secondary" href="/admin/warehouses/<%= w.id %>/edit">Edit</a>
+              <form method="post" action="<%= admin_warehouse_path(w) %>" onsubmit="return confirm('Delete this warehouse?');">
+                <%= hidden_field_tag :authenticity_token, form_authenticity_token %>
+                <input type="hidden" name="_method" value="delete">
+                <button type="submit" class="secondary">Delete</button>
+              </form>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  <% end %>
 
-  <div class="row" style="justify-content:space-between; margin-top: 10px;">
+  <div class="row justify-between mt-10">
     <% if @page.to_i > 1 %>
       <a class="muted" href="<%= admin_warehouses_path(q: @q, location: @location, page: (@page.to_i - 1), per: @per) %>">← Prev</a>
     <% else %>
