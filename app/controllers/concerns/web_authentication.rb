@@ -28,5 +28,3 @@ module WebAuthentication
     Current.user
   end
 end
-
-

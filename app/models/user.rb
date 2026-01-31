@@ -14,5 +14,3 @@ class User < ApplicationRecord
     Wallet.create!(user: self, balance_paise: 0) unless wallet
   end
 end
-
-

@@ -8,5 +8,3 @@ class AddUserToOrders < ActiveRecord::Migration[8.1]
     add_foreign_key :orders, :users, if_not_exists: true
   end
 end
-
-

@@ -19,8 +19,8 @@ Rails.application.routes.draw do
     get "orders/:order_id/pay" => "payments#new", as: :new_payment
     post "orders/:order_id/pay" => "payments#create", as: :payments
     post "orders/:order_id/pay_wallet" => "payments#wallet", as: :wallet_payments
-    get "orders/:order_id/checkout" => "gateway#show", as: :gateway_checkout
-    post "orders/:order_id/checkout" => "gateway#pay", as: :gateway_pay
+    get "checkout/:payment_id" => "gateway#show", as: :gateway_checkout
+    post "checkout/:payment_id" => "gateway#pay", as: :gateway_pay
     get "orders/:order_id/payment_callback" => "payments#callback", as: :payment_callback
     get "login" => "sessions#new", as: :login
     post "login" => "sessions#create"

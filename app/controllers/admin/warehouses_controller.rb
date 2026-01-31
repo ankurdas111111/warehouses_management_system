@@ -3,8 +3,8 @@ module Admin
     def index
       @location = params[:location].to_s.strip.presence
       @q = params[:q].to_s.strip.presence
-      @page = [params[:page].to_i, 1].max
-      @per = [[params[:per].to_i, 50].max, 200].min
+      @page = [ params[:page].to_i, 1 ].max
+      @per = [ [ params[:per].to_i, 50 ].max, 200 ].min
 
       scope = Warehouse.order(:code)
       scope = scope.where(location: @location) if @location.present?
@@ -58,5 +58,3 @@ module Admin
     end
   end
 end
-
-

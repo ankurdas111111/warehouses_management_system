@@ -10,5 +10,3 @@ class WarehousesController < ApplicationController
     render json: { id: wh.id, code: wh.code, name: wh.name, location: wh.location }, status: :created
   end
 end
-
-

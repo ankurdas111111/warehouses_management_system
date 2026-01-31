@@ -25,7 +25,7 @@ class RateLimiter
     count = Rails.cache.increment(key, 1, expires_in: period)
     if count.to_i > limit
       body = { error: "rate_limited", limit: limit, period_seconds: period }.to_json
-      return [429, { "Content-Type" => "application/json" }, [body]]
+      return [ 429, { "Content-Type" => "application/json" }, [ body ] ]
     end
 
     @app.call(env)
@@ -46,5 +46,3 @@ class RateLimiter
     "rl:v1:#{rule_key}:ip:#{ip}"
   end
 end
-
-

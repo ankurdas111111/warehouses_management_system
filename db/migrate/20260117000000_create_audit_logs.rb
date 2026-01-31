@@ -25,5 +25,3 @@ class CreateAuditLogs < ActiveRecord::Migration[8.1]
     add_index :audit_logs, :request_id
   end
 end
-
-

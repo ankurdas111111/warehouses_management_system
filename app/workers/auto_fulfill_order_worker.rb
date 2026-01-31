@@ -37,5 +37,3 @@ class AutoFulfillOrderWorker
     raise
   end
 end
-
-

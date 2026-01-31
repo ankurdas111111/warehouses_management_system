@@ -6,5 +6,3 @@ FactoryBot.define do
     reserved { 0 }
   end
 end
-
-

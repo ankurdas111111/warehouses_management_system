@@ -22,5 +22,3 @@ class JwtToken
     ENV["JWT_SECRET"].presence || Rails.application.secret_key_base
   end
 end
-
-

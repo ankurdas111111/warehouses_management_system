@@ -3,7 +3,7 @@ class AutoFulfillDueOrdersWorker
 
   sidekiq_options retry: 5
 
-  # Runs periodically (every 4 hours via sidekiq-cron). Scans for orders that are
+  # Runs periodically (every 4 hours via sidekiq-cron default). Scans for orders that are
   # reserving stock and fulfills only what can be fulfilled safely.
   def perform(limit = 500)
     return if ENV.fetch("AUTO_FULFILL_ENABLED", "1") == "0"
@@ -26,5 +26,3 @@ class AutoFulfillDueOrdersWorker
     end
   end
 end
-
-

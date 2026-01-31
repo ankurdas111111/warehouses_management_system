@@ -23,12 +23,12 @@ module Orders
 
         raise ValidationError, "one or more reservation_id not found" if reservations.size != @items.size
 
-        stock_item_keys = reservations.values.map { |r| [r.sku_id, r.warehouse_id] }.uniq
+        stock_item_keys = reservations.values.map { |r| [ r.sku_id, r.warehouse_id ] }.uniq
         stock_items = StockItem.where(sku_id: stock_item_keys.map(&:first), warehouse_id: stock_item_keys.map(&:last))
                                .order(:id)
                                .lock
                                .to_a
-                               .index_by { |si| [si.sku_id, si.warehouse_id] }
+                               .index_by { |si| [ si.sku_id, si.warehouse_id ] }
 
         line_by_sku = order.order_lines.index_by(&:sku_id)
 
@@ -43,7 +43,7 @@ module Orders
           raise InvalidTransitionError, "reservation is not active" unless reservation.active?
           raise ValidationError, "quantity exceeds remaining reservation" if qty > reservation.remaining_quantity
 
-          stock_item = stock_items.fetch([reservation.sku_id, reservation.warehouse_id])
+          stock_item = stock_items.fetch([ reservation.sku_id, reservation.warehouse_id ])
 
           # Decrement both on_hand and reserved when we ship units.
           stock_item.update!(
@@ -109,5 +109,3 @@ module Orders
     end
   end
 end
-
-

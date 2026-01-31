@@ -5,5 +5,3 @@ FactoryBot.define do
     location { "BLR" }
   end
 end
-
-

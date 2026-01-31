@@ -4,5 +4,3 @@ class AddPriceCentsToSkus < ActiveRecord::Migration[8.1]
     add_index :skus, :price_cents
   end
 end
-
-

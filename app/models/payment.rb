@@ -21,5 +21,3 @@ class Payment < ApplicationRecord
     errors.add(:base, "payment must belong to an order or a payable") if order_id.blank? && payable_id.blank?
   end
 end
-
-

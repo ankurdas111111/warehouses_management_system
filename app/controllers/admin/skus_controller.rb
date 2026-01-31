@@ -2,8 +2,8 @@ module Admin
   class SkusController < BaseController
     def index
       @q = params[:q].to_s.strip.presence
-      @page = [params[:page].to_i, 1].max
-      @per = [[params[:per].to_i, 50].max, 200].min
+      @page = [ params[:page].to_i, 1 ].max
+      @per = [ [ params[:per].to_i, 50 ].max, 200 ].min
 
       scope = Sku.order(:code)
       if @q.present?
@@ -45,8 +45,5 @@ module Admin
     def sku_params
       params.require(:sku).permit(:code, :name, :price_inr)
     end
-
   end
 end
-
-

@@ -9,7 +9,7 @@
 
 :schedule:
   auto_fulfill_due_orders:
-    cron: "0 */4 * * *"
+    cron: <%= ENV.fetch("AUTO_FULFILL_DUE_ORDERS_CRON", "0 */4 * * *") %>
     class: "AutoFulfillDueOrdersWorker"
     queue: default
     description: "Every 4 hours, fulfill all orders that can be fulfilled (based on active, unexpired reservations)."

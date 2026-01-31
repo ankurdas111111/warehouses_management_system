@@ -46,7 +46,7 @@ module Web
           .includes(
             { order_lines: :sku },
             { inventory_reservations: %i[sku warehouse] },
-            { fulfillments: [:warehouse, { fulfillment_items: %i[sku inventory_reservation] }] }
+            { fulfillments: [ :warehouse, { fulfillment_items: %i[sku inventory_reservation] } ] }
           )
           .find(params[:id])
     end
@@ -85,7 +85,7 @@ module Web
         rows
           .map do |r|
             available = r.on_hand.to_i - r.reserved.to_i
-            [r.sku_code, r.sku_name, r.price_cents.to_i, r.location.to_s, available]
+            [ r.sku_code, r.sku_name, r.price_cents.to_i, r.location.to_s, available ]
           end
           .group_by { |sku_code, _name, _price, _loc, _avail| sku_code }
     end
@@ -97,5 +97,3 @@ module Web
     end
   end
 end
-
-

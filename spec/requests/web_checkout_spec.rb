@@ -19,7 +19,7 @@ RSpec.describe "Web checkout flow", type: :request do
          params: {
            delivery_city: "Mumbai",
            idempotency_key: SecureRandom.uuid,
-           lines: [{ sku_code: "WIDGET", quantity: 10 }]
+           lines: [ { sku_code: "WIDGET", quantity: 10 } ]
          }
 
     expect(response).to have_http_status(422)
@@ -38,7 +38,7 @@ RSpec.describe "Web checkout flow", type: :request do
          params: {
            delivery_city: "Delhi",
            idempotency_key: SecureRandom.uuid,
-           lines: [{ sku_code: "WIDGET", quantity: 1 }]
+           lines: [ { sku_code: "WIDGET", quantity: 1 } ]
          }
     expect(response).to have_http_status(:found)
     location = response.headers.fetch("Location")
@@ -55,11 +55,19 @@ RSpec.describe "Web checkout flow", type: :request do
     # Posting /pay should redirect to hosted checkout and not mark paid.
     post "/orders/#{order.id}/pay"
     expect(response).to have_http_status(:found)
-    expect(URI.parse(response.headers.fetch("Location")).path).to eq("/orders/#{order.id}/checkout")
+    checkout_path = URI.parse(response.headers.fetch("Location")).path
+    expect(checkout_path).to match(%r{\A/checkout/\d+\z})
     expect(order.reload.payment_pending?).to be(true)
 
     # Hosted checkout "Pay" should redirect through callback and then mark paid.
-    post "/orders/#{order.id}/checkout"
+    payment_id = checkout_path.split("/").last.to_i
+    post "/checkout/#{payment_id}",
+         params: {
+           cardholder_name: "Test User",
+           card_number: "4111 1111 1111 1111",
+           expiry: "12/30",
+           cvv: "123"
+         }
     expect(response).to have_http_status(:found)
     expect(URI.parse(response.headers.fetch("Location")).path).to include("/orders/#{order.id}/payment_callback")
 
@@ -71,5 +79,3 @@ RSpec.describe "Web checkout flow", type: :request do
     expect(order.reload.paid?).to be(true)
   end
 end
-
-

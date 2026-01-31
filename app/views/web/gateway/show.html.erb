@@ -1,5 +1,11 @@
 <div class="card">
-  <h2>Hosted Checkout (Dummy)</h2>
+  <h2>
+    <% if @payment.payable_type == "Wallet" %>
+      Hosted Checkout (Wallet Top-up)
+    <% else %>
+      Hosted Checkout (Dummy)
+    <% end %>
+  </h2>
   <p class="muted">
     Provider Order ID: <code><%= @payment.provider_order_id %></code><br>
     Amount: <strong><%= format("₹%.2f", @payment.amount_paise.to_i / 100.0) %></strong><br>
@@ -7,33 +13,174 @@
   </p>
 
   <p class="muted">
-    This simulates a third-party hosted checkout page. Enter any values below.
+    This simulates a third-party hosted checkout page. Enter card details below.
   </p>
 
-  <form method="post" action="<%= gateway_pay_path(order_id: @order.id) %>">
+  <% if defined?(@errors) && @errors.present? %>
+    <div class="error" style="margin: 10px 0;">
+      <strong>Fix the following:</strong>
+      <ul>
+        <% @errors.each do |e| %>
+          <li><%= e %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <form id="gateway-checkout-form" method="post" action="<%= gateway_pay_path(payment_id: @payment.id) %>" novalidate>
     <%= hidden_field_tag :authenticity_token, form_authenticity_token %>
 
     <div class="row">
       <label>
+        Cardholder name<br>
+        <input name="cardholder_name" autocomplete="cc-name" placeholder="Ankur Das">
+        <div class="field-error" data-error-for="cardholder_name"></div>
+      </label>
+    </div>
+
+    <div class="row">
+      <label>
         Card number<br>
-        <input name="card_number" placeholder="4111 1111 1111 1111">
+        <input name="card_number" inputmode="numeric" autocomplete="cc-number" placeholder="4111 1111 1111 1111" maxlength="19">
+        <div class="field-error" data-error-for="card_number"></div>
       </label>
       <label>
         Expiry<br>
-        <input name="expiry" placeholder="12/30">
+        <input name="expiry" inputmode="numeric" autocomplete="cc-exp" placeholder="12/30" maxlength="7">
+        <div class="field-error" data-error-for="expiry"></div>
       </label>
       <label>
         CVV<br>
-        <input name="cvv" placeholder="123">
+        <input name="cvv" inputmode="numeric" autocomplete="cc-csc" placeholder="123" maxlength="3">
+        <div class="field-error" data-error-for="cvv"></div>
       </label>
     </div>
 
     <div class="row" style="margin-top: 10px;">
-      <button type="submit">Pay</button>
+      <button id="gateway-pay-btn" type="submit">Pay</button>
       <button class="secondary" type="submit" name="simulate_failure" value="1">Fail</button>
-      <a class="muted" href="<%= new_payment_path(order_id: @order.id) %>">Back</a>
+      <% if @order.present? %>
+        <a class="muted" href="<%= new_payment_path(order_id: @order.id) %>">Back</a>
+      <% else %>
+        <a class="muted" href="<%= wallet_path %>">Back</a>
+      <% end %>
     </div>
   </form>
 </div>
+
+<script>
+  (function () {
+    var form = document.getElementById("gateway-checkout-form");
+    if (!form) return;
+
+    var payBtn = document.getElementById("gateway-pay-btn");
+    var nameEl = form.querySelector('input[name="cardholder_name"]');
+    var numberEl = form.querySelector('input[name="card_number"]');
+    var expiryEl = form.querySelector('input[name="expiry"]');
+    var cvvEl = form.querySelector('input[name="cvv"]');
+
+    function setError(field, message) {
+      var box = form.querySelector('[data-error-for="' + field + '"]');
+      if (box) box.textContent = message || "";
+      var input = form.querySelector('input[name="' + field + '"]');
+      if (input) {
+        if (message) input.classList.add("input-invalid");
+        else input.classList.remove("input-invalid");
+      }
+    }
+
+    function digitsOnly(s) {
+      return (s || "").replace(/\D/g, "");
+    }
+
+    function luhnOk(num) {
+      var sum = 0;
+      var rev = num.split("").reverse();
+      for (var i = 0; i < rev.length; i++) {
+        var n = parseInt(rev[i], 10);
+        if (i % 2 === 1) {
+          n = n * 2;
+          if (n > 9) n -= 9;
+        }
+        sum += n;
+      }
+      return sum % 10 === 0;
+    }
+
+    function parseExpiry(raw) {
+      var m = (raw || "").trim().match(/^(\d{1,2})\s*\/\s*(\d{2}|\d{4})$/);
+      if (!m) return null;
+      var mm = parseInt(m[1], 10);
+      var yy = parseInt(m[2], 10);
+      if (yy < 100) yy += 2000;
+      return { month: mm, year: yy };
+    }
+
+    function endOfMonth(year, month) {
+      // month is 1-12; JS Date month is 0-11; day=0 gives last day of previous month.
+      return new Date(year, month, 0);
+    }
+
+    function validateAll() {
+      var ok = true;
+
+      var name = (nameEl.value || "").trim();
+      if (!name) { setError("cardholder_name", "Required."); ok = false; }
+      else setError("cardholder_name", "");
+
+      var num = digitsOnly(numberEl.value);
+      if (!num) { setError("card_number", "Required."); ok = false; }
+      else if (num.length !== 16) { setError("card_number", "Must be 16 digits."); ok = false; }
+      else if (!luhnOk(num)) { setError("card_number", "Invalid number."); ok = false; }
+      else setError("card_number", "");
+
+      var exp = parseExpiry(expiryEl.value);
+      if (!expiryEl.value.trim()) { setError("expiry", "Required."); ok = false; }
+      else if (!exp) { setError("expiry", "Use MM/YY."); ok = false; }
+      else if (exp.month < 1 || exp.month > 12) { setError("expiry", "Month must be 01–12."); ok = false; }
+      else {
+        var now = new Date();
+        var today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        var expEnd = endOfMonth(exp.year, exp.month);
+        if (expEnd < today) { setError("expiry", "Card expired."); ok = false; }
+        else setError("expiry", "");
+      }
+
+      var cvv = digitsOnly(cvvEl.value);
+      if (!cvv) { setError("cvv", "Required."); ok = false; }
+      else if (cvv.length !== 3) { setError("cvv", "Must be 3 digits."); ok = false; }
+      else setError("cvv", "");
+
+      if (payBtn) payBtn.disabled = !ok;
+      return ok;
+    }
+
+    form.addEventListener("input", function (e) {
+      // Best-effort formatting for nicer UX:
+      if (e.target === numberEl) {
+        var d = digitsOnly(numberEl.value).slice(0, 16);
+        numberEl.value = d.replace(/(.{4})/g, "$1 ").trim();
+      }
+      if (e.target === cvvEl) {
+        cvvEl.value = digitsOnly(cvvEl.value).slice(0, 3);
+      }
+      if (e.target === expiryEl) {
+        var dd = digitsOnly(expiryEl.value).slice(0, 6);
+        if (dd.length >= 3) expiryEl.value = dd.slice(0, 2) + "/" + dd.slice(2, 4);
+        else expiryEl.value = dd;
+      }
+      validateAll();
+    });
+
+    form.addEventListener("submit", function (e) {
+      // Allow the "Fail" button to submit without validation.
+      var submitter = e.submitter;
+      if (submitter && submitter.name === "simulate_failure") return;
+      if (!validateAll()) e.preventDefault();
+    });
+
+    validateAll();
+  })();
+</script>
 
 

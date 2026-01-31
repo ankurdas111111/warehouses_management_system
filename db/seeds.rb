@@ -12,7 +12,7 @@
 #
 # NOTE: SKU prices are stored in integer INR minor units (paise) in `price_cents`.
 
-SEED_SCALE = [ENV.fetch("SEED_SCALE", "1").to_i, 1].max
+SEED_SCALE = [ ENV.fetch("SEED_SCALE", "1").to_i, 1 ].max
 RNG = Random.new(2026) # deterministic, stable across runs
 
 def slug_code(s)
@@ -91,7 +91,7 @@ sku_catalog = [
 ].freeze
 
 base_cities = IndianCities::CITIES.dup
-selected_cities = base_cities.sample([18 * SEED_SCALE, base_cities.size].min, random: RNG)
+selected_cities = base_cities.sample([ 18 * SEED_SCALE, base_cities.size ].min, random: RNG)
 
 puts "Seeding warehouses (#{selected_cities.size})..."
 warehouses =
@@ -113,8 +113,8 @@ extra_skus =
   (1..(15 * SEED_SCALE)).map do |i|
     {
       code: "SNACKS_MIX_#{format('%02d', i)}",
-      name: ["Namkeen Mix", "Chakli", "Murukku", "Khakhra", "Roasted Chana"].sample(random: RNG) + " (#{format('%02d', i)})",
-      price_inr: [79, 99, 129, 149, 179].sample(random: RNG)
+      name: [ "Namkeen Mix", "Chakli", "Murukku", "Khakhra", "Roasted Chana" ].sample(random: RNG) + " (#{format('%02d', i)})",
+      price_inr: [ 79, 99, 129, 149, 179 ].sample(random: RNG)
     }
   end
 
@@ -140,7 +140,7 @@ warehouses_by_city = warehouses.group_by(&:location)
 
 skus.each do |sku|
   # Stock each SKU in 6–10 warehouses so orders can split across locations.
-  wh_count = [[6 + RNG.rand(5), warehouses.size].min, 1].max
+  wh_count = [ [ 6 + RNG.rand(5), warehouses.size ].min, 1 ].max
   chosen_whs = warehouses.sample(wh_count, random: RNG)
 
   chosen_whs.each do |wh|

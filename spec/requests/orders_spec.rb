@@ -12,7 +12,7 @@ RSpec.describe "Orders API", type: :request do
     post "/api/orders",
          params: {
            customer_email: "buyer@example.com",
-           lines: [{ sku_code: "WIDGET", quantity: 3 }]
+           lines: [ { sku_code: "WIDGET", quantity: 3 } ]
          },
          headers: { "Idempotency-Key" => "order-abc" }
 
@@ -26,7 +26,7 @@ RSpec.describe "Orders API", type: :request do
     post "/api/orders",
          params: {
            customer_email: "buyer@example.com",
-           lines: [{ sku_code: "WIDGET", quantity: 3 }]
+           lines: [ { sku_code: "WIDGET", quantity: 3 } ]
          },
          headers: { "Idempotency-Key" => "order-abc" }
 
@@ -35,5 +35,3 @@ RSpec.describe "Orders API", type: :request do
     expect(body2["id"]).to eq(body["id"])
   end
 end
-
-

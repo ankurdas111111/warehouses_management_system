@@ -32,7 +32,7 @@ class PaymentsController < ApplicationController
 
     payment =
       Payment.find_by!(
-        provider: ["dummy_gateway", "legacy_dummy_gateway"],
+        provider: [ "dummy_gateway", "legacy_dummy_gateway" ],
         provider_order_id: provider_order_id,
         order_id: order.id
       )
@@ -47,5 +47,3 @@ class PaymentsController < ApplicationController
     render json: { error: e.message }, status: :unprocessable_entity
   end
 end
-
-

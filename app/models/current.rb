@@ -6,5 +6,3 @@ class Current < ActiveSupport::CurrentAttributes
   attribute :request_method
   attribute :ip
 end
-
-

@@ -28,5 +28,3 @@ class InventoryController < ApplicationController
     params.permit(:sku_code, :warehouse_code, :location).to_h.deep_symbolize_keys
   end
 end
-
-

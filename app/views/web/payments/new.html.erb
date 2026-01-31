@@ -26,7 +26,7 @@
       </button>
     </form>
 
-    <a href="<%= gateway_checkout_path(order_id: @order.id) %>">Proceed to checkout</a>
+    <a href="<%= gateway_checkout_path(payment_id: @payment.id) %>">Proceed to checkout</a>
 
     <a class="muted" href="<%= wallet_path %>">Recharge wallet</a>
     <a class="muted" href="<%= order_path(@order) %>">Back to order</a>

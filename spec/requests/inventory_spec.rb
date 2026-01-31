@@ -19,5 +19,3 @@ RSpec.describe "Inventory API", type: :request do
     expect(body.first["available"]).to eq(3)
   end
 end
-
-

@@ -3,5 +3,3 @@ module Web
     include WebAuthentication
   end
 end
-
-

@@ -33,7 +33,7 @@ RSpec.describe Orders::Create, :concurrency do
                 .new(
                   customer_email: "buyer@example.com",
                   idempotency_key: "order-#{i}",
-                  lines: [{ sku_code: "WIDGET", quantity: 1 }]
+                  lines: [ { sku_code: "WIDGET", quantity: 1 } ]
                 )
                 .call
               mutex.synchronize { successes += 1 }
@@ -58,5 +58,3 @@ RSpec.describe Orders::Create, :concurrency do
     expect(stock_items.sum(:reserved)).to eq(10)
   end
 end
-
-

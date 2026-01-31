@@ -41,5 +41,3 @@ module DummyGateway
     true
   end
 end
-
-

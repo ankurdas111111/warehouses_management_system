@@ -4,5 +4,3 @@ class AddDeliveryCityToOrders < ActiveRecord::Migration[8.1]
     add_index :orders, :delivery_city
   end
 end
-
-

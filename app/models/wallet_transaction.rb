@@ -8,5 +8,3 @@ class WalletTransaction < ApplicationRecord
   validates :reason, presence: true
   validates :amount_paise, numericality: { only_integer: true, greater_than: 0 }
 end
-
-

@@ -4,5 +4,3 @@ class AddLocationToWarehouses < ActiveRecord::Migration[8.1]
     add_index :warehouses, :location
   end
 end
-
-

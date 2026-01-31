@@ -11,5 +11,3 @@ class BackfillWalletsForExistingUsers < ActiveRecord::Migration[8.1]
     # no-op
   end
 end
-
-

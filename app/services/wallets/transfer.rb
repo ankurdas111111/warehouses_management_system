@@ -123,5 +123,3 @@ module Wallets
     end
   end
 end
-
-

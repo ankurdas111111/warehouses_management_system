@@ -45,6 +45,10 @@ Fulfillment pattern:
 - **Fast path**: schedule auto-fulfillment after successful payment
 - **Safety net**: cron sweep every 4 hours for eligible reserved orders
 
+Cron schedule config:
+- `SIDEKIQ_CRON_ENABLED=0` disables loading `config/sidekiq.yml` schedules.
+- `AUTO_FULFILL_DUE_ORDERS_CRON` controls the sweep schedule (default: `0 */4 * * *`).
+
 ### Currency
 SKU pricing and payments are tracked in integer **INR minor units (paise)** for correctness; UI displays INR.
 
@@ -61,7 +65,12 @@ docker-compose up -d
 
 ### 2) Configure env + install gems
 ```bash
-cp env.example .env
+# Create a local .env (gitignored). At minimum, set DB + Redis ports used by docker-compose:
+# DB_HOST=localhost
+# DB_PORT=5434
+# DB_USERNAME=postgres
+# DB_PASSWORD=postgres
+# REDIS_URL=redis://localhost:6380/0
 bundle install
 ```
 
@@ -87,8 +96,7 @@ bin/sidekiq
 If you deploy the web app on Render but only want to run Sidekiq **on-demand** from your laptop, create a local env file and use the helper script:
 
 ```bash
-cp env.sidekiq-remote.example .env.sidekiq-remote
-# edit .env.sidekiq-remote and fill DATABASE_URL, REDIS_URL, RAILS_MASTER_KEY
+# Create `.env.sidekiq-remote` (gitignored) and set: DATABASE_URL, REDIS_URL, RAILS_MASTER_KEY
 chmod +x bin/sidekiq-remote
 bin/sidekiq-remote
 ```
@@ -117,7 +125,7 @@ Admin pages are protected by `ADMIN_USER` / `ADMIN_PASSWORD`:
 ### Hosted (dummy) checkout
 No external network calls; this simulates a typical gateway pattern:
 - `GET /orders/:order_id/pay` → payment selection + provider order creation
-- `GET /orders/:order_id/checkout` → hosted checkout screen
+- `GET /checkout/:payment_id` → hosted checkout screen
 - `GET /orders/:order_id/payment_callback` → callback verifies signature and marks payment captured
 
 Wallet payments remain a separate option on the payment page.
@@ -230,7 +238,7 @@ Controls:
 - `RUN_DB_SEED=1` runs seed after prepare
 
 ## Environment variables
-See `env.example` for local defaults. Common production vars:
+Common production vars:
 - `DATABASE_URL`
 - `REDIS_URL`
 - `RAILS_MASTER_KEY`

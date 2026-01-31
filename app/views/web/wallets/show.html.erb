@@ -4,14 +4,14 @@
     Balance: <strong><%= format("₹%.2f", @wallet.balance_paise.to_i / 100.0) %></strong>
   </p>
 
-  <h3>Recharge (Dummy Payment Gateway)</h3>
+  <h3>Recharge (Hosted Checkout)</h3>
   <form method="post" action="<%= wallet_recharge_path %>" class="row">
     <%= hidden_field_tag :authenticity_token, form_authenticity_token %>
     <label>
       Amount (INR)<br>
       <input name="amount_inr" required placeholder="e.g. 500.00">
     </label>
-    <button type="submit">Recharge</button>
+    <button type="submit">Proceed to checkout</button>
   </form>
 
   <h3 style="margin-top:16px;">Recent transactions</h3>

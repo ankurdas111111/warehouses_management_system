@@ -30,5 +30,3 @@ class AuditLog < ApplicationRecord
     )
   end
 end
-
-

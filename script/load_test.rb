@@ -22,7 +22,7 @@ ts =
       req = Net::HTTP::Post.new(uri)
       req["Content-Type"] = "application/json"
       req["Idempotency-Key"] = "loadtest-#{i}"
-      req.body = { customer_email: "loadtest@example.com", lines: [{ sku_code: "WIDGET", quantity: 1 }] }.to_json
+      req.body = { customer_email: "loadtest@example.com", lines: [ { sku_code: "WIDGET", quantity: 1 } ] }.to_json
 
       res = Net::HTTP.start(uri.host, uri.port) { |http| http.request(req) }
 
@@ -39,5 +39,3 @@ ts =
 ts.each(&:join)
 
 puts({ success: success, conflict: conflict, other: other }.to_json)
-
-

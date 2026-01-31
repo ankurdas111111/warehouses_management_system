@@ -10,5 +10,3 @@ class SkusController < ApplicationController
     render json: { id: sku.id, code: sku.code, name: sku.name }, status: :created
   end
 end
-
-

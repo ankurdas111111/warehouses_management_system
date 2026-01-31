@@ -31,5 +31,3 @@ class HealthController < ActionController::API
     render json: { status: ok ? "ok" : "degraded", checks: checks }, status: status
   end
 end
-
-

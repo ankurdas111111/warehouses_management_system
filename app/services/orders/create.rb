@@ -144,13 +144,13 @@ module Orders
                 0
               end
 
-            [distance_rank, exact_city_rank, (distance || 9_999_999), -si.available, si.warehouse_id]
+            [ distance_rank, exact_city_rank, (distance || 9_999_999), -si.available, si.warehouse_id ]
           end
 
       candidates.each do |stock_item|
         break if needed <= 0
 
-        take = [stock_item.available, needed].min
+        take = [ stock_item.available, needed ].min
         next if take <= 0
 
         distance_km = distance_by_wh_id[stock_item.warehouse_id]
@@ -181,8 +181,5 @@ module Orders
 
       raise OutOfStockError, "insufficient inventory for sku_id=#{line.sku_id}" if needed.positive?
     end
-
   end
 end
-
-

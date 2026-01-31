@@ -71,8 +71,5 @@ module Admin
       end
       .uniq { |r| r[:warehouse_code] }
     end
-
   end
 end
-
-

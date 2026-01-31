@@ -4,5 +4,3 @@ class MakePaymentsPolymorphic < ActiveRecord::Migration[8.1]
     change_column_null :payments, :order_id, true
   end
 end
-
-

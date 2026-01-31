@@ -1,7 +1,22 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Local default matches docker-compose.yml mapping (host 6380 -> container 6379).
+# Load env file for Sidekiq.
+# - Default: .env (local)
+# - Override: ENV_FILE=.env.sidekiq-remote
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+ENV_FILE="${ENV_FILE:-${ROOT_DIR}/.env}"
+
+if [[ -f "${ENV_FILE}" ]]; then
+  # Load env vars from a shell-compatible env file.
+  # Note: values containing spaces (e.g. cron) must be quoted:
+  #   AUTO_FULFILL_DUE_ORDERS_CRON="0 */1 * * *"
+  set -a
+  # shellcheck disable=SC1090
+  source "${ENV_FILE}"
+  set +a
+fi
+
 export REDIS_URL="${REDIS_URL:-redis://localhost:6380/0}"
 
 exec bundle exec sidekiq -C config/sidekiq.yml

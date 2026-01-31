@@ -13,6 +13,9 @@
       .card { border: 1px solid #e5e5e5; border-radius: 10px; padding: 16px; max-width: 980px; }
       .muted { color: #666; }
       .error { background: #fff1f1; border: 1px solid #ffcccc; padding: 10px; border-radius: 8px; color: #900; }
+      .notice { background: #f3fff7; border: 1px solid #c9f2d8; padding: 10px; border-radius: 8px; color: #064; }
+      .field-error { color: #900; font-size: 12px; margin-top: 4px; min-height: 16px; }
+      .input-invalid { border-color: #ffcccc; background: #fff8f8; }
       table { border-collapse: collapse; width: 100%; }
       th, td { border-bottom: 1px solid #eee; padding: 10px; text-align: left; }
       th { background: #fafafa; }
@@ -44,6 +47,13 @@
       <% end %>
       <a href="<%= admin_root_path %>">Admin</a>
     </header>
+
+    <% if flash[:alert].present? %>
+      <div class="error" style="margin-bottom: 12px;"><%= flash[:alert] %></div>
+    <% end %>
+    <% if flash[:notice].present? %>
+      <div class="notice" style="margin-bottom: 12px;"><%= flash[:notice] %></div>
+    <% end %>
 
     <%= yield %>
   </body>

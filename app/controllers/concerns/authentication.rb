@@ -34,5 +34,3 @@ module Authentication
     h.delete_prefix("Bearer ").strip
   end
 end
-
-

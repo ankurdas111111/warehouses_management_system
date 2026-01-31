@@ -4,5 +4,3 @@ class AddPaymentStatusToOrders < ActiveRecord::Migration[8.1]
     add_index :orders, :payment_status
   end
 end
-
-

@@ -14,5 +14,3 @@ class CreateWalletTransactions < ActiveRecord::Migration[8.1]
     add_index :wallet_transactions, :idempotency_key, unique: true, where: "idempotency_key IS NOT NULL"
   end
 end
-
-

@@ -24,5 +24,3 @@ ActiveSupport::Notifications.subscribe(/^(orders|inventory|reservation|wallet|pa
   duration_ms = ((finish - start) * 1000.0).round(1)
   StructuredLogging.log(event_name: name, payload: payload || {}, duration_ms: duration_ms)
 end
-
-

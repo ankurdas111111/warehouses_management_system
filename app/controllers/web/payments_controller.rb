@@ -89,7 +89,26 @@ module Web
         user_id: current_user.id,
         order_id: order.id
       )
-      redirect_to gateway_checkout_path(order_id: order.id)
+      payment =
+        Payment.where(order: order, provider: "dummy_gateway")
+               .order(created_at: :desc)
+               .find { |p| p.created? }
+
+      unless payment
+        gw_order = DummyGateway.create_order(amount_paise: order.total_paise, receipt: "order-#{order.id}")
+        payment =
+          Payment.create!(
+            order: order,
+            payable: order,
+            amount_paise: order.total_paise,
+            provider: "dummy_gateway",
+            provider_order_id: gw_order[:id],
+            status: :created,
+            metadata: { currency: "INR" }
+          )
+      end
+
+      redirect_to gateway_checkout_path(payment_id: payment.id)
     end
 
     # Simulated gateway callback (hosted checkout returns here).
@@ -159,5 +178,3 @@ module Web
     end
   end
 end
-
-

@@ -19,7 +19,7 @@ module Orders
                .lock
                .to_a
 
-        keys = reservations.map { |r| [r.sku_id, r.warehouse_id] }.uniq
+        keys = reservations.map { |r| [ r.sku_id, r.warehouse_id ] }.uniq
         sku_ids = keys.map(&:first)
         warehouse_ids = keys.map(&:last)
 
@@ -28,13 +28,13 @@ module Orders
                    .order(:id)
                    .lock
                    .to_a
-                   .index_by { |si| [si.sku_id, si.warehouse_id] }
+                   .index_by { |si| [ si.sku_id, si.warehouse_id ] }
 
         reservations.each do |r|
           release_qty = r.remaining_quantity
           next if release_qty <= 0
 
-          stock_item = stock_items.fetch([r.sku_id, r.warehouse_id])
+          stock_item = stock_items.fetch([ r.sku_id, r.warehouse_id ])
 
           stock_item.update!(reserved: stock_item.reserved - release_qty)
           r.update!(status: :released)
@@ -80,5 +80,3 @@ module Orders
     end
   end
 end
-
-

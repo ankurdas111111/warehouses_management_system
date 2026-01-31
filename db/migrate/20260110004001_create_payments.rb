@@ -15,5 +15,3 @@ class CreatePayments < ActiveRecord::Migration[8.1]
     add_index :payments, %i[provider provider_order_id], unique: true
   end
 end
-
-

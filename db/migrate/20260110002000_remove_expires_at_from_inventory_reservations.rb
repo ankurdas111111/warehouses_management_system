@@ -3,5 +3,3 @@ class RemoveExpiresAtFromInventoryReservations < ActiveRecord::Migration[8.1]
     remove_column :inventory_reservations, :expires_at, :datetime
   end
 end
-
-

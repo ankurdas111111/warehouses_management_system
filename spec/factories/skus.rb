@@ -4,5 +4,3 @@ FactoryBot.define do
     name { "Test SKU" }
   end
 end
-
-
